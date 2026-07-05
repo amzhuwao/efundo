@@ -1,0 +1,30 @@
+{
+  "name": "efundo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "eFundo — learning platform for exam papers, notes, lessons, and practice tests",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bash scripts/check-db.sh && concurrently -n api,web -c blue,green \"npm run dev -w @efundo/api\" \"npm run dev -w @efundo/web\"",
+    "dev:api": "bash scripts/check-db.sh && npm run dev -w @efundo/api",
+    "dev:web": "npm run dev -w @efundo/web",
+    "build": "npm run build -w @efundo/shared-types && npm run build -w @efundo/api && npm run build -w @efundo/web",
+    "db:generate": "npm run db:generate -w @efundo/api",
+    "db:migrate": "npm run db:migrate -w @efundo/api",
+    "db:migrate:dev": "npm run db:migrate:dev -w @efundo/api",
+    "db:setup": "bash scripts/setup-postgres.sh",
+    "db:seed": "npm run db:seed -w @efundo/api",
+    "db:studio": "npm run db:studio -w @efundo/api",
+    "lint": "npm run lint -w @efundo/api && npm run lint -w @efundo/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

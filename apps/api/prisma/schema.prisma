@@ -1,0 +1,358 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  INSTITUTION_ADMIN
+  LECTURER
+  MODERATOR
+  STUDENT
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum ResourceType {
+  PAST_PAPER
+  TEXTBOOK
+  LECTURE_NOTE
+  ASSIGNMENT
+  SOLUTION
+  RESEARCH_PAPER
+  LAB_MANUAL
+  REVISION_GUIDE
+  SLIDES
+  CASE_STUDY
+}
+
+enum ResourceStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  PUBLISHED
+  REJECTED
+}
+
+enum EducationLevel {
+  PRIMARY
+  O_LEVEL
+  A_LEVEL
+  TERTIARY
+  OTHER
+}
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  passwordHash   String          @map("password_hash")
+  fullName       String          @map("full_name")
+  role           UserRole        @default(STUDENT)
+  status         UserStatus      @default(PENDING)
+  avatarUrl      String?         @map("avatar_url")
+  educationLevel EducationLevel? @map("education_level")
+  programId      String?         @map("program_id")
+  year           Int?
+  emailVerified  Boolean         @default(false) @map("email_verified")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  program           Program?      @relation(fields: [programId], references: [id])
+  favouriteSubjects UserSubject[]
+  uploadedResources Resource[]    @relation("UploadedResources")
+  bookmarks         Bookmark[]
+  downloads         Download[]
+  reviews           Review[]
+  lessonProgress    LessonProgress[]
+  discussions       Discussion[]  @relation("DiscussionAuthor")
+  comments          Comment[]
+  createdLessons    Lesson[]      @relation("LessonAuthor")
+
+  @@index([programId])
+  @@index([educationLevel])
+  @@map("users")
+}
+
+model Program {
+  id            String         @id @default(cuid())
+  level         EducationLevel
+  name          String
+  slug          String
+  description   String?
+  providerName  String?        @map("provider_name")
+  formOrGrade   Int?           @map("form_or_grade")
+  durationYears Int?           @map("duration_years")
+  orderIndex    Int            @default(0) @map("order_index")
+  status        String         @default("active")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  subjects  Subject[]
+  users     User[]
+  resources Resource[]
+
+  @@unique([level, slug])
+  @@index([level])
+  @@map("programs")
+}
+
+model Subject {
+  id        String   @id @default(cuid())
+  programId String   @map("program_id")
+  name      String
+  code      String
+  year      Int?
+  semester  Int?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  program     Program       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  users       UserSubject[]
+  resources   Resource[]
+  modules     Module[]
+  discussions Discussion[]
+
+  @@unique([programId, code])
+  @@index([programId])
+  @@index([year])
+  @@map("subjects")
+}
+
+model UserSubject {
+  userId    String   @map("user_id")
+  subjectId String   @map("subject_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@id([userId, subjectId])
+  @@map("user_subjects")
+}
+
+model Resource {
+  id              String         @id @default(cuid())
+  title           String
+  slug            String
+  description     String?
+  type            ResourceType
+  status          ResourceStatus @default(DRAFT)
+  educationLevel EducationLevel? @map("education_level")
+  programId      String?         @map("program_id")
+  subjectId      String?         @map("subject_id")
+  year            Int?
+  semester        Int?
+  author          String?
+  uploaderId      String?        @map("uploader_id")
+  fileKey         String?        @map("file_key")
+  fileName        String?        @map("file_name")
+  fileSize        Int?           @map("file_size")
+  mimeType        String?        @map("mime_type")
+  downloadCount   Int            @default(0) @map("download_count")
+  viewCount       Int            @default(0) @map("view_count")
+  tags            String[]       @default([])
+  rejectionReason String?        @map("rejection_reason")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  publishedAt     DateTime?      @map("published_at")
+
+  program   Program? @relation(fields: [programId], references: [id])
+  subject   Subject? @relation(fields: [subjectId], references: [id])
+  uploader  User?    @relation("UploadedResources", fields: [uploaderId], references: [id])
+  bookmarks Bookmark[]
+  downloads Download[]
+  reviews   Review[]
+
+  @@unique([programId, slug])
+  @@index([programId])
+  @@index([educationLevel])
+  @@index([subjectId])
+  @@index([type])
+  @@index([status])
+  @@index([title])
+  @@map("resources")
+}
+
+model Bookmark {
+  userId     String   @map("user_id")
+  resourceId String   @map("resource_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@id([userId, resourceId])
+  @@map("bookmarks")
+}
+
+model Download {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  resourceId   String   @map("resource_id")
+  downloadedAt DateTime @default(now()) @map("downloaded_at")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([resourceId])
+  @@map("downloads")
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  resourceId String   @map("resource_id")
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, resourceId])
+  @@index([resourceId])
+  @@map("reviews")
+}
+
+enum LessonStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  subjectId   String   @map("subject_id")
+  title       String
+  slug        String
+  description String?
+  orderIndex  Int      @default(0) @map("order_index")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topics  Topic[]
+
+  @@unique([subjectId, slug])
+  @@index([subjectId])
+  @@map("modules")
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  moduleId    String   @map("module_id")
+  title       String
+  slug        String
+  description String?
+  orderIndex  Int      @default(0) @map("order_index")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  module  Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@unique([moduleId, slug])
+  @@index([moduleId])
+  @@map("topics")
+}
+
+model Lesson {
+  id              String       @id @default(cuid())
+  topicId         String       @map("topic_id")
+  title           String
+  slug            String
+  summary         String?
+  content         Json         @default("[]")
+  videoUrl        String?      @map("video_url")
+  videoKey        String?      @map("video_key")
+  videoFileName   String?      @map("video_file_name")
+  videoMimeType   String?      @map("video_mime_type")
+  videoSize       Int?         @map("video_size")
+  durationMinutes Int          @default(15) @map("duration_minutes")
+  difficulty      Difficulty   @default(BEGINNER)
+  objectives      String[]     @default([])
+  prerequisites   String[]     @default([])
+  status          LessonStatus @default(DRAFT)
+  orderIndex      Int          @default(0) @map("order_index")
+  authorId        String?      @map("author_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  publishedAt     DateTime?    @map("published_at")
+
+  topic    Topic            @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  author   User?            @relation("LessonAuthor", fields: [authorId], references: [id])
+  progress LessonProgress[]
+
+  @@unique([topicId, slug])
+  @@index([topicId])
+  @@index([status])
+  @@map("lessons")
+}
+
+model LessonProgress {
+  userId          String   @map("user_id")
+  lessonId        String   @map("lesson_id")
+  percentComplete Int      @default(0) @map("percent_complete")
+  lastPosition    Int      @default(0) @map("last_position")
+  completed       Boolean  @default(false)
+  completedAt     DateTime? @map("completed_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@id([userId, lessonId])
+  @@map("lesson_progress")
+}
+
+model Discussion {
+  id        String   @id @default(cuid())
+  subjectId String   @map("subject_id")
+  authorId  String   @map("author_id")
+  title     String
+  body      String
+  isPinned  Boolean  @default(false) @map("is_pinned")
+  viewCount Int      @default(0) @map("view_count")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  subject  Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  author   User      @relation("DiscussionAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  comments Comment[]
+
+  @@index([subjectId])
+  @@index([createdAt])
+  @@map("discussions")
+}
+
+model Comment {
+  id           String   @id @default(cuid())
+  discussionId String   @map("discussion_id")
+  authorId     String   @map("author_id")
+  body         String
+  isAccepted   Boolean  @default(false) @map("is_accepted")
+  upvotes      Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  author     User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([discussionId])
+  @@map("comments")
+}
