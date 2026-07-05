@@ -80,6 +80,10 @@ export interface LessonAiProject {
   sources: AiSource[];
 }
 
+export function getAiStatus(token: string) {
+  return api.get<{ configured: boolean }>('/lesson-ai/status', token);
+}
+
 export function createAiProject(
   data: { subjectId: string; title: string; instructions?: string },
   token: string,

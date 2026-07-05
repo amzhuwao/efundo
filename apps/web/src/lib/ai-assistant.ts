@@ -1,4 +1,4 @@
-import { api, API_URL } from './api';
+import { api, authFetch } from './api';
 
 export type AiChatRole = 'USER' | 'ASSISTANT' | 'SYSTEM';
 export type AiSourceStatus = 'PENDING' | 'EXTRACTING' | 'READY' | 'FAILED';
@@ -87,11 +87,10 @@ export async function uploadAssistantFile(
 ) {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(`${API_URL}/ai-assistant/sessions/${sessionId}/files`, {
+  const res = await authFetch(`/ai-assistant/sessions/${sessionId}/files`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
     body: form,
-  });
+  }, token);
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/auth-store';
 import { EDUCATION_LEVEL_LABELS, type EducationLevel } from '@efundo/shared-types';
@@ -24,12 +24,13 @@ const LEVELS: EducationLevel[] = [
 
 export default function LearnPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, accessToken, hasHydrated } = useAuthStore();
   const token = accessToken();
 
   const [level, setLevel] = useState<EducationLevel>('TERTIARY');
   const [programId, setProgramId] = useState('');
-  const [subjectId, setSubjectId] = useState('');
+  const [subjectId, setSubjectId] = useState(searchParams.get('subject') ?? '');
 
   const { data: catalog = [], isLoading: catalogLoading } = useQuery({
     queryKey: ['lms-catalog'],
@@ -65,6 +66,24 @@ export default function LearnPage() {
   const subjects = selectedProgram?.subjects ?? [];
 
   useEffect(() => {
+    const subject = searchParams.get('subject');
+    if (subject) setSubjectId(subject);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!catalog.length || !subjectId) return;
+    for (const entry of catalog) {
+      for (const program of entry.programs) {
+        if (program.subjects.some((s) => s.id === subjectId)) {
+          setLevel(entry.level as EducationLevel);
+          setProgramId(program.id);
+          return;
+        }
+      }
+    }
+  }, [catalog, subjectId]);
+
+  useEffect(() => {
     if (hasHydrated && !user) router.replace('/login');
   }, [hasHydrated, user, router]);
 
@@ -81,9 +100,9 @@ export default function LearnPage() {
         programs.find((p) => p.subjects.some((s) => s.lessonCount > 0)) ??
         programs[0];
       setProgramId(preferred.id);
-      setSubjectId('');
+      if (!searchParams.get('subject')) setSubjectId('');
     }
-  }, [programs, programId]);
+  }, [programs, programId, searchParams]);
 
   useEffect(() => {
     if (!subjects.length) return;

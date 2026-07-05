@@ -14,6 +14,7 @@ import {
   updateAiProject,
   formatAiStatus,
   formatSourceType,
+  getAiStatus,
   type GeneratedCourseOutline,
 } from '@/lib/lesson-ai';
 import {
@@ -94,6 +95,12 @@ export default function AiProjectPage() {
     enabled: !!id && !!token,
     refetchInterval: (q) =>
       q.state.data?.status === 'PROCESSING' ? 3000 : false,
+  });
+
+  const { data: aiStatus } = useQuery({
+    queryKey: ['ai-status'],
+    queryFn: () => getAiStatus(token!),
+    enabled: !!token,
   });
 
   useEffect(() => {
@@ -184,6 +191,21 @@ export default function AiProjectPage() {
       {project.errorMessage && (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {project.errorMessage}
+        </div>
+      )}
+
+      {aiStatus && !aiStatus.configured && (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Add <code className="font-mono">GEMINI_API_KEY</code> from{' '}
+          <a
+            href="https://aistudio.google.com/app/apikey"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-efundo-primary hover:underline"
+          >
+            Google AI Studio
+          </a>{' '}
+          to <code className="font-mono">apps/api/.env</code> and restart the API.
         </div>
       )}
 

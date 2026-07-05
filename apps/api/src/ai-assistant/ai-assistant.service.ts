@@ -4,17 +4,16 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   AiChatRole,
   AiSourceStatus,
   LessonStatus,
   Prisma,
 } from '@prisma/client';
-import OpenAI from 'openai';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { ExtractionService } from '../lesson-ai/extraction.service';
+import { GeminiService } from '../ai/gemini.service';
 import {
   CreateAssistantSessionDto,
   SendAssistantMessageDto,
@@ -25,19 +24,12 @@ const MAX_CONTEXT_CHARS = 60_000;
 
 @Injectable()
 export class AiAssistantService {
-  private openai: OpenAI | null = null;
-  private readonly model: string;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
     private readonly extraction: ExtractionService,
-    private readonly config: ConfigService,
-  ) {
-    const apiKey = this.config.get<string>('OPENAI_API_KEY');
-    if (apiKey) this.openai = new OpenAI({ apiKey });
-    this.model = this.config.get<string>('OPENAI_MODEL') ?? 'gpt-4o-mini';
-  }
+    private readonly gemini: GeminiService,
+  ) {}
 
   private sessionInclude = {
     subject: { select: { id: true, name: true, code: true } },
@@ -215,11 +207,7 @@ export class AiAssistantService {
     userId: string,
     dto: SendAssistantMessageDto,
   ) {
-    if (!this.openai) {
-      throw new BadRequestException(
-        'AI assistant is not configured. Ask your administrator to set OPENAI_API_KEY.',
-      );
-    }
+    this.gemini.ensureConfigured();
 
     const session = await this.getOwnedSession(sessionId, userId);
 
@@ -265,30 +253,21 @@ Your role:
 - When assignment files are provided, reference them specifically and ask clarifying questions.
 - Use clear, encouraging language appropriate for secondary school and university learners.
 - If you lack information, say so honestly rather than guessing.
+- Format replies with Markdown: use **bold**, bullet lists, numbered steps, and \`inline code\` where helpful.
 
 ${contextBlock}`;
 
-    const chatMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      { role: 'system', content: systemPrompt },
-      ...history
-        .reverse()
-        .filter((m) => m.role !== AiChatRole.SYSTEM)
-        .map((m) => ({
-          role: m.role === AiChatRole.USER ? ('user' as const) : ('assistant' as const),
-          content: m.content,
-        })),
-    ];
+    const turns = history
+      .reverse()
+      .filter((m) => m.role !== AiChatRole.SYSTEM)
+      .map((m) => ({
+        role: (m.role === AiChatRole.USER ? 'user' : 'assistant') as
+          | 'user'
+          | 'assistant',
+        content: m.content,
+      }));
 
-    const completion = await this.openai.chat.completions.create({
-      model: this.model,
-      messages: chatMessages,
-      temperature: 0.6,
-      max_tokens: 2000,
-    });
-
-    const reply =
-      completion.choices[0]?.message?.content?.trim() ||
-      'I could not generate a response. Please try rephrasing your question.';
+    const reply = await this.gemini.chat(systemPrompt, turns);
 
     const assistantMessage = await this.prisma.aiAssistantMessage.create({
       data: {
@@ -329,7 +308,7 @@ ${contextBlock}`;
         `Current lesson: "${l.title}" in ${l.topic.module.title} → ${l.topic.title}`,
       );
       if (l.summary) parts.push(`Lesson summary: ${l.summary}`);
-      if (l.objectives.length) {
+      if (l.objectives?.length) {
         parts.push(`Learning objectives: ${l.objectives.join('; ')}`);
       }
       const lessonText = this.lessonContentToText(l.content);

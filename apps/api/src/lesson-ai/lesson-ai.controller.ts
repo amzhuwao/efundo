@@ -122,6 +122,12 @@ export class LessonAiController {
     return this.lessonAiService.startGeneration(id, req.user.role);
   }
 
+  @Get('status')
+  @ApiOperation({ summary: 'Check whether AI generation is configured' })
+  status() {
+    return this.lessonAiService.getAiStatus();
+  }
+
   @Post('projects/:id/apply')
   @ApiOperation({ summary: 'Create draft modules, topics, and lessons from outline' })
   apply(

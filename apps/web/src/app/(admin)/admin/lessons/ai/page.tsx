@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/auth-store';
 import { getCatalog } from '@/lib/lms';
-import { createAiProject, listAiProjects, formatAiStatus } from '@/lib/lesson-ai';
+import { createAiProject, listAiProjects, formatAiStatus, getAiStatus } from '@/lib/lesson-ai';
 import {
   useAuthorGuard,
   AdminPageHeader,
@@ -42,6 +42,12 @@ export default function AiCourseBuilderPage() {
       })),
     ),
   );
+
+  const { data: aiStatus } = useQuery({
+    queryKey: ['ai-status'],
+    queryFn: () => getAiStatus(token!),
+    enabled: !!token,
+  });
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['ai-projects'],
@@ -130,9 +136,23 @@ export default function AiCourseBuilderPage() {
           </form>
 
           <p className="mt-4 text-xs text-slate-400">
-            Requires OPENAI_API_KEY on the API server. Video sources are transcribed with
-            Whisper; PDFs are text-extracted locally.
+            Uses Google Gemini (free tier). Video sources are transcribed with Gemini;
+            PDFs are text-extracted locally.
           </p>
+          {aiStatus && !aiStatus.configured && (
+            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              Gemini is not configured. Add <code className="font-mono">GEMINI_API_KEY</code> from{' '}
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-efundo-primary hover:underline"
+              >
+                Google AI Studio
+              </a>{' '}
+              to <code className="font-mono">apps/api/.env</code>, then restart the API.
+            </p>
+          )}
         </section>
 
         <section className="rounded-2xl border bg-white p-6 shadow-sm">

@@ -119,6 +119,20 @@ Each institution includes a sample BSc Computer Science course with Year 1–4 s
 - [ ] **Phase 5** — Flutter mobile app
 - [ ] **Phase 6** — Premium subscriptions & AI assistant
 
+## Troubleshooting
+
+### `Cannot GET /login` (JSON 404)
+
+That response comes from the **API** (NestJS), not the web app. The login page lives on the Next.js server.
+
+| Use this | Not this |
+|----------|----------|
+| http://localhost:3000/login | http://localhost:3001/login |
+
+Run both servers with `npm run dev`. If you only started the API (`npm run dev:api`), start the web app too: `npm run dev:web`.
+
+After the latest API update, hitting `/login` on port 3001 redirects to the web app automatically.
+
 ## Scripts
 
 ```bash

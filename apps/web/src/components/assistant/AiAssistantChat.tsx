@@ -13,6 +13,7 @@ import {
   deleteAssistantSession,
   type AiAssistantMessage,
 } from '@/lib/ai-assistant';
+import { MarkdownMessage } from '@/components/assistant/MarkdownMessage';
 
 function formatBytes(n: number) {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
@@ -24,16 +25,19 @@ function MessageBubble({ message }: { message: AiAssistantMessage }) {
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
           isUser
             ? 'bg-efundo-primary text-white'
             : 'border bg-white text-slate-800 shadow-sm'
         }`}
       >
         {!isUser && (
-          <p className="mb-1 text-xs font-semibold text-efundo-primary">eFundo AI</p>
+          <p className="mb-2 text-xs font-semibold text-efundo-primary">eFundo AI</p>
         )}
-        {message.content}
+        <MarkdownMessage
+          content={message.content}
+          variant={isUser ? 'user' : 'assistant'}
+        />
       </div>
     </div>
   );

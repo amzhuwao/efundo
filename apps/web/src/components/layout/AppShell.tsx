@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
 import { AppSidebar } from './AppSidebar';
+import { AppHeader } from './AppHeader';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -56,24 +57,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <div className="flex min-h-screen flex-col md:pl-64">
-        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 md:hidden">
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            className="rounded-lg border border-slate-200 p-2 text-slate-600"
-            aria-label="Open menu"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-          <span className="font-semibold text-slate-900">eFundo</span>
-        </header>
+        <AppHeader onMenuOpen={() => setMobileOpen(true)} />
 
         <main className={isWide ? 'flex-1' : 'flex-1 p-4 md:p-8'}>
           <div className={isWide ? '' : 'mx-auto max-w-6xl'}>{children}</div>

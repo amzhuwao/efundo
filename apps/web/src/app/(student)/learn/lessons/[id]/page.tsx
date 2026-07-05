@@ -8,6 +8,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import {
   getLesson,
   getModules,
+  getAdjacentLessons,
   updateLessonProgress,
   hasVideo,
 } from '@/lib/lms';
@@ -16,6 +17,7 @@ import {
   LessonVideoPlayer,
   ContentBlock,
 } from '@/components/learn/LessonPlayer';
+import { LessonNavBar } from '@/components/learn/LessonNavBar';
 
 type Tab = 'overview' | 'readings';
 
@@ -26,6 +28,7 @@ export default function LessonPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('overview');
+  const [outlineOpen, setOutlineOpen] = useState(false);
   const progressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: lesson, isLoading } = useQuery({
@@ -63,6 +66,10 @@ export default function LessonPage() {
     if (lesson && hasVideo(lesson)) setTab('overview');
     else if (lesson) setTab('readings');
   }, [lesson?.id]);
+
+  useEffect(() => {
+    setOutlineOpen(false);
+  }, [id]);
 
   function saveVideoProgress(seconds: number, percent: number) {
     if (!token) return;
@@ -106,16 +113,31 @@ export default function LessonPage() {
   const subject = lesson.topic.module.subject;
   const isVideoLesson = hasVideo(lesson);
   const completed = lesson.progress?.completed;
+  const { prev, next } = getAdjacentLessons(modules, id);
 
   return (
-    <div className="flex min-h-[calc(100vh-0px)] bg-white">
-      <CourseOutline
-        modules={modules}
-        currentLessonId={id}
-        subjectCode={subject.code}
+    <div className="flex min-h-full flex-col bg-white">
+      <LessonNavBar
+        subject={subject}
+        moduleTitle={lesson.topic.module.title}
+        topicTitle={lesson.topic.title}
+        lessonTitle={lesson.title}
+        prevLesson={prev}
+        nextLesson={next}
+        onToggleOutline={() => setOutlineOpen((open) => !open)}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1">
+        <CourseOutline
+          modules={modules}
+          currentLessonId={id}
+          subjectCode={subject.code}
+          subjectName={subject.name}
+          mobileOpen={outlineOpen}
+          onClose={() => setOutlineOpen(false)}
+        />
+
+        <div className="flex min-w-0 flex-1 flex-col">
         {/* Video hero — Coursera style */}
         <div className="bg-black">
           <LessonVideoPlayer
@@ -128,14 +150,6 @@ export default function LessonPage() {
 
         {/* Lesson header + tabs */}
         <div className="border-b bg-white px-4 py-4 md:px-8">
-          <nav className="mb-3 flex items-center gap-2 text-sm text-slate-500 lg:hidden">
-            <Link href="/learn" className="hover:text-efundo-primary">
-              Lessons
-            </Link>
-            <span>/</span>
-            <span>{subject.code}</span>
-          </nav>
-
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
             <div>
               <p className="text-sm font-medium text-efundo-primary">
@@ -264,6 +278,7 @@ export default function LessonPage() {
               </article>
             )}
           </div>
+        </div>
         </div>
       </div>
     </div>

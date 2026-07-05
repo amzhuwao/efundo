@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
+import { GeminiService } from '../ai/gemini.service';
 
 export interface GeneratedLessonBlock {
   type: 'heading' | 'paragraph' | 'list' | 'code';
@@ -48,23 +48,13 @@ interface SourceChunk {
 
 @Injectable()
 export class GenerationService {
-  private openai: OpenAI | null = null;
-  private readonly model: string;
-
-  constructor(private readonly config: ConfigService) {
-    const apiKey = this.config.get<string>('OPENAI_API_KEY');
-    if (apiKey) {
-      this.openai = new OpenAI({ apiKey });
-    }
-    this.model = this.config.get<string>('OPENAI_MODEL') ?? 'gpt-4o-mini';
-  }
+  constructor(
+    private readonly gemini: GeminiService,
+    private readonly config: ConfigService,
+  ) {}
 
   ensureConfigured() {
-    if (!this.openai) {
-      throw new Error(
-        'OPENAI_API_KEY is not configured. Add it to apps/api/.env to use AI lesson generation.',
-      );
-    }
+    this.gemini.ensureConfigured();
   }
 
   async generateOutline(
@@ -124,20 +114,7 @@ ${instructions ? `Educator instructions: ${instructions}\n` : ''}
 Source material:
 ${combined}`;
 
-    const response = await this.openai!.chat.completions.create({
-      model: this.model,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature: 0.4,
-    });
-
-    const raw = response.choices[0]?.message?.content;
-    if (!raw) {
-      throw new Error('AI returned an empty response');
-    }
+    const raw = await this.gemini.generateJson(systemPrompt, userPrompt);
 
     let parsed: GeneratedCourseOutline;
     try {

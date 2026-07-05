@@ -79,6 +79,10 @@ export class LessonAiService {
     });
   }
 
+  getAiStatus() {
+    return { configured: this.extraction.hasAi() };
+  }
+
   async listProjects(subjectId: string | undefined, role: UserRole) {
     if (!this.canAuthor(role)) throw new ForbiddenException();
 

@@ -15,18 +15,46 @@ export function CourseOutline({
   modules,
   currentLessonId,
   subjectCode,
+  subjectName,
+  mobileOpen = false,
+  onClose,
 }: {
   modules: ModuleWithTopics[];
   currentLessonId: string;
   subjectCode: string;
+  subjectName?: string;
+  mobileOpen?: boolean;
+  onClose?: () => void;
 }) {
-  return (
-    <aside className="hidden w-72 shrink-0 overflow-y-auto border-r bg-white lg:block">
-      <div className="border-b px-4 py-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-          Course content
-        </p>
-        <p className="mt-1 font-semibold text-slate-900">{subjectCode}</p>
+  const content = (
+    <>
+      <div className="flex items-start justify-between border-b px-4 py-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Course content
+          </p>
+          <p className="mt-1 font-semibold text-slate-900">{subjectCode}</p>
+          {subjectName && (
+            <p className="mt-0.5 text-xs text-slate-500">{subjectName}</p>
+          )}
+        </div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 lg:hidden"
+            aria-label="Close course outline"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        )}
       </div>
       <nav className="p-2">
         {modules.map((mod) => (
@@ -43,6 +71,7 @@ export function CourseOutline({
                       <li key={lesson.id}>
                         <Link
                           href={`/learn/lessons/${lesson.id}`}
+                          onClick={onClose}
                           className={`flex items-start gap-2 rounded-lg px-2 py-2 text-sm transition ${
                             active
                               ? 'bg-blue-50 font-medium text-efundo-primary'
@@ -63,7 +92,32 @@ export function CourseOutline({
           </div>
         ))}
       </nav>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      <aside className="hidden w-72 shrink-0 overflow-y-auto border-r bg-white lg:block">
+        {content}
+      </aside>
+
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Close course outline"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] transform overflow-y-auto border-r bg-white shadow-xl transition-transform duration-200 lg:hidden ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {content}
+      </aside>
+    </>
   );
 }
 

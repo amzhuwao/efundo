@@ -114,6 +114,21 @@ export interface CatalogEntry {
   programs: CatalogProgram[];
 }
 
+export function getAdjacentLessons(
+  modules: ModuleWithTopics[],
+  currentLessonId: string,
+): { prev: LessonSummary | null; next: LessonSummary | null } {
+  const flat = modules.flatMap((mod) =>
+    mod.topics.flatMap((topic) => topic.lessons),
+  );
+  const index = flat.findIndex((lesson) => lesson.id === currentLessonId);
+  if (index < 0) return { prev: null, next: null };
+  return {
+    prev: index > 0 ? flat[index - 1] : null,
+    next: index < flat.length - 1 ? flat[index + 1] : null,
+  };
+}
+
 export function lessonVideoUrl(lessonId: string) {
   return `${API_URL}/lms/lessons/${lessonId}/video`;
 }

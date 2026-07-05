@@ -9,6 +9,7 @@ interface AuthState {
   tokens: AuthTokens | null;
   hasHydrated: boolean;
   setAuth: (user: User, tokens: AuthTokens) => void;
+  updateTokens: (tokens: AuthTokens) => void;
   logout: () => void;
   accessToken: () => string | null;
   setHasHydrated: (value: boolean) => void;
@@ -21,6 +22,7 @@ export const useAuthStore = create<AuthState>()(
       tokens: null,
       hasHydrated: false,
       setAuth: (user, tokens) => set({ user, tokens }),
+      updateTokens: (tokens) => set({ tokens }),
       logout: () => set({ user: null, tokens: null }),
       accessToken: () => get().tokens?.accessToken ?? null,
       setHasHydrated: (value) => set({ hasHydrated: value }),
