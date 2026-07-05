@@ -39,6 +39,7 @@ export enum ResourceType {
   REVISION_GUIDE = 'REVISION_GUIDE',
   SLIDES = 'SLIDES',
   CASE_STUDY = 'CASE_STUDY',
+  EXTERNAL_COURSE = 'EXTERNAL_COURSE',
 }
 
 export enum ResourceStatus {
@@ -147,6 +148,11 @@ export interface ResourceSummary {
   downloadCount: number;
   viewCount: number;
   tags: string[];
+  externalUrl?: string | null;
+  sourceName?: string | null;
+  sourceCatalogUrl?: string | null;
+  attributionNotice?: string | null;
+  durationWeeks?: number | null;
   avgRating?: number | null;
   reviewCount: number;
   isBookmarked?: boolean;

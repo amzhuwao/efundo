@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/auth-store';
 import {
@@ -30,6 +30,7 @@ export default function AdminLessonsPage() {
   const user = useAuthorGuard();
   const token = useAuthStore((s) => s.accessToken());
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
 
   const [subjectId, setSubjectId] = useState('');
@@ -39,6 +40,11 @@ export default function AdminLessonsPage() {
   const [lessonTopicId, setLessonTopicId] = useState('');
   const [lessonTitle, setLessonTitle] = useState('');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const subject = searchParams.get('subject');
+    if (subject) setSubjectId(subject);
+  }, [searchParams]);
 
   const { data: catalog = [] } = useQuery({
     queryKey: ['lms-catalog'],
@@ -126,6 +132,16 @@ export default function AdminLessonsPage() {
         description="Build modules, topics, and lessons with video and readings — Coursera-style course structure."
         backHref="/admin"
       />
+
+      <div className="mb-6">
+        <Link
+          href="/admin/lessons/ai"
+          className="inline-flex items-center gap-2 rounded-xl border border-efundo-primary/30 bg-efundo-primary/5 px-4 py-3 text-sm font-medium text-efundo-primary hover:bg-efundo-primary/10"
+        >
+          <span aria-hidden>✨</span>
+          AI course builder — generate lessons from PDFs &amp; videos
+        </Link>
+      </div>
 
       <ErrorAlert message={error} />
 

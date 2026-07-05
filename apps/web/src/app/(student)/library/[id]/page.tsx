@@ -86,23 +86,67 @@ export default function ResourceDetailPage() {
           <p className="mt-6 leading-relaxed text-slate-600">{resource.description}</p>
         )}
 
+        {resource.externalUrl && (
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+            <p className="font-semibold">Third-party course listing</p>
+            <p className="mt-2 leading-relaxed">
+              {resource.attributionNotice ??
+                `This course is offered by ${resource.sourceName ?? 'the original provider'}. eFundo does not host course materials.`}
+            </p>
+            {resource.sourceCatalogUrl && (
+              <p className="mt-2">
+                Source catalog:{' '}
+                <a
+                  href={resource.sourceCatalogUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-efundo-primary hover:underline"
+                >
+                  {resource.sourceCatalogUrl}
+                </a>
+              </p>
+            )}
+          </div>
+        )}
+
         <dl className="mt-8 grid gap-4 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-slate-500">File</dt>
-            <dd className="font-medium">{resource.fileName ?? '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Size</dt>
-            <dd className="font-medium">{formatFileSize(resource.fileSize)}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Downloads</dt>
-            <dd className="font-medium">{resource.downloadCount}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Views</dt>
-            <dd className="font-medium">{resource.viewCount}</dd>
-          </div>
+          {resource.externalUrl ? (
+            <>
+              <div>
+                <dt className="text-slate-500">Provider</dt>
+                <dd className="font-medium">{resource.sourceName ?? '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Duration</dt>
+                <dd className="font-medium">
+                  {resource.durationWeeks ? `${resource.durationWeeks} weeks` : '—'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Views</dt>
+                <dd className="font-medium">{resource.viewCount}</dd>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <dt className="text-slate-500">File</dt>
+                <dd className="font-medium">{resource.fileName ?? '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Size</dt>
+                <dd className="font-medium">{formatFileSize(resource.fileSize)}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Downloads</dt>
+                <dd className="font-medium">{resource.downloadCount}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Views</dt>
+                <dd className="font-medium">{resource.viewCount}</dd>
+              </div>
+            </>
+          )}
         </dl>
 
         {resource.tags.length > 0 && (
@@ -119,14 +163,25 @@ export default function ResourceDetailPage() {
         )}
 
         <div className="mt-8 flex flex-wrap gap-3">
-          {resource.hasFile && (
-            <button
-              onClick={handleDownload}
-              disabled={downloading}
-              className="rounded-xl bg-efundo-primary px-6 py-2.5 font-semibold text-white hover:bg-efundo-primary-dark disabled:opacity-50"
+          {resource.externalUrl ? (
+            <a
+              href={resource.externalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl bg-efundo-primary px-6 py-2.5 font-semibold text-white hover:bg-efundo-primary-dark"
             >
-              {downloading ? 'Downloading...' : 'Download'}
-            </button>
+              View on {resource.sourceName ?? 'provider site'} →
+            </a>
+          ) : (
+            resource.hasFile && (
+              <button
+                onClick={handleDownload}
+                disabled={downloading}
+                className="rounded-xl bg-efundo-primary px-6 py-2.5 font-semibold text-white hover:bg-efundo-primary-dark disabled:opacity-50"
+              >
+                {downloading ? 'Downloading...' : 'Download'}
+              </button>
+            )
           )}
           <button
             onClick={() => bookmarkMut.mutate()}

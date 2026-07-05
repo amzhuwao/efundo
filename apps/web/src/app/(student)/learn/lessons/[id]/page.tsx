@@ -147,6 +147,12 @@ export default function LessonPage() {
               )}
             </div>
             <div className="flex shrink-0 items-center gap-3">
+              <Link
+                href={`/assistant?lessonId=${id}`}
+                className="rounded-lg border border-efundo-primary/30 bg-efundo-primary/5 px-3 py-2 text-sm font-medium text-efundo-primary hover:bg-efundo-primary/10"
+              >
+                Ask AI tutor
+              </Link>
               <span className="text-sm text-slate-500">
                 {lesson.durationMinutes} min
                 {isVideoLesson ? ' video' : ' read'}

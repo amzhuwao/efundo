@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
+import { isAdminRole } from '@/lib/roles';
 import type { AuthResponse } from '@efundo/shared-types';
 
 export default function LoginPage() {
@@ -22,8 +23,10 @@ export default function LoginPage() {
     try {
       const res = await api.post<AuthResponse>('/auth/login', { email, password });
       setAuth(res.user, res.tokens);
-      if (!res.user.programId) {
+      if (!res.user.programId && !isAdminRole(res.user.role)) {
         router.push('/onboarding');
+      } else if (isAdminRole(res.user.role)) {
+        router.push('/admin');
       } else {
         router.push('/dashboard');
       }

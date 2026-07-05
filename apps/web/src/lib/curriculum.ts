@@ -1,6 +1,26 @@
 import { api } from './api';
 import type { EducationLevel, Program, Subject } from '@efundo/shared-types';
 
+export function programUnitLabel(level: EducationLevel) {
+  switch (level) {
+    case 'PRIMARY':
+      return 'Grade';
+    case 'O_LEVEL':
+    case 'A_LEVEL':
+      return 'Form';
+    default:
+      return 'Program';
+  }
+}
+
+export function usesFormOrGrade(level: EducationLevel) {
+  return level === 'PRIMARY' || level === 'O_LEVEL' || level === 'A_LEVEL';
+}
+
+export function usesProvider(level: EducationLevel) {
+  return level === 'TERTIARY' || level === 'OTHER';
+}
+
 export function getEducationLevels() {
   return api.get<Array<{ value: EducationLevel; label: string }>>(
     '/curriculum/levels',
@@ -32,6 +52,22 @@ export function updateProgram(
   return api.patch<Program>(`/curriculum/programs/${id}`, data, token);
 }
 
+export function createProgram(
+  data: {
+    level: EducationLevel;
+    name: string;
+    slug: string;
+    description?: string;
+    providerName?: string;
+    formOrGrade?: number;
+    durationYears?: number;
+    orderIndex?: number;
+  },
+  token: string,
+) {
+  return api.post<Program>('/curriculum/programs', data, token);
+}
+
 export function archiveProgram(id: string, token: string) {
   return api.delete(`/curriculum/programs/${id}`, token);
 }
@@ -46,6 +82,19 @@ export function updateSubject(
 
 export function deleteSubject(id: string, token: string) {
   return api.delete(`/curriculum/subjects/${id}`, token);
+}
+
+export function createSubject(
+  programId: string,
+  data: {
+    name: string;
+    code: string;
+    year?: number;
+    semester?: number;
+  },
+  token: string,
+) {
+  return api.post<Subject>(`/curriculum/programs/${programId}/subjects`, data, token);
 }
 
 export async function getSubjectsForLearn(

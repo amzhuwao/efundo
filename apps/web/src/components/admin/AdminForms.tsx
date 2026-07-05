@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
+import { getHomeHref } from '@/lib/roles';
 
 export function useAuthorGuard() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export function useAuthorGuard() {
     else if (
       !['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LECTURER'].includes(user.role)
     ) {
-      router.replace('/dashboard');
+      router.replace(getHomeHref(user.role));
     }
   }, [user, router]);
 
@@ -30,7 +31,7 @@ export function useAdminGuard() {
     else if (
       !['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'MODERATOR'].includes(user.role)
     ) {
-      router.replace('/dashboard');
+      router.replace(getHomeHref(user.role));
     }
   }, [user, router]);
 
@@ -111,14 +112,21 @@ export function AdminPageHeader({
 export function SubmitButton({
   loading,
   children,
+  type = 'submit',
+  disabled,
+  onClick,
 }: {
   loading?: boolean;
   children: React.ReactNode;
+  type?: 'submit' | 'button';
+  disabled?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
-      type="submit"
-      disabled={loading}
+      type={type}
+      onClick={onClick}
+      disabled={loading || disabled}
       className="rounded-lg bg-efundo-primary px-4 py-2 text-sm font-medium text-white hover:bg-efundo-primary-dark disabled:opacity-50"
     >
       {loading ? 'Saving...' : children}

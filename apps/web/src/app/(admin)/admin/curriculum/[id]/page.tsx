@@ -21,12 +21,12 @@ import {
 } from '@efundo/shared-types';
 import {
   archiveProgram,
+  createSubject,
   deleteSubject,
   getProgram,
   updateProgram,
   updateSubject,
 } from '@/lib/curriculum';
-import { api } from '@/lib/api';
 
 export default function AdminProgramDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -114,8 +114,8 @@ export default function AdminProgramDetailPage() {
     setError('');
     setSuccess('');
     try {
-      await api.post(
-        `/curriculum/programs/${id}/subjects`,
+      await createSubject(
+        id,
         {
           name: subName,
           code: subCode,
@@ -234,27 +234,38 @@ export default function AdminProgramDetailPage() {
         {editMode ? (
           <form onSubmit={saveProgram} className="mt-4 space-y-4">
             <FormField label="Name">
-              <Input value={progName} onChange={setProgName} required />
+              <Input
+                value={progName}
+                onChange={(e) => setProgName(e.target.value)}
+                required
+              />
             </FormField>
             <FormField label="Slug">
-              <Input value={progSlug} onChange={setProgSlug} required />
+              <Input
+                value={progSlug}
+                onChange={(e) => setProgSlug(e.target.value)}
+                required
+              />
             </FormField>
             <FormField label="Provider">
-              <Input value={providerName} onChange={setProviderName} />
+              <Input
+                value={providerName}
+                onChange={(e) => setProviderName(e.target.value)}
+              />
             </FormField>
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField label="Form / grade">
                 <Input
                   type="number"
                   value={formOrGrade}
-                  onChange={setFormOrGrade}
+                  onChange={(e) => setFormOrGrade(e.target.value)}
                 />
               </FormField>
               <FormField label="Duration (years)">
                 <Input
                   type="number"
                   value={durationYears}
-                  onChange={setDurationYears}
+                  onChange={(e) => setDurationYears(e.target.value)}
                 />
               </FormField>
             </div>
@@ -334,16 +345,24 @@ export default function AdminProgramDetailPage() {
           </h3>
           <div className="grid gap-4 sm:grid-cols-3">
             <FormField label="Name">
-              <Input value={subName} onChange={setSubName} required />
+              <Input
+                value={subName}
+                onChange={(e) => setSubName(e.target.value)}
+                required
+              />
             </FormField>
             <FormField label="Code">
-              <Input value={subCode} onChange={setSubCode} required />
+              <Input
+                value={subCode}
+                onChange={(e) => setSubCode(e.target.value)}
+                required
+              />
             </FormField>
             <FormField label="Year (optional)">
               <Input
                 type="number"
                 value={subYear}
-                onChange={setSubYear}
+                onChange={(e) => setSubYear(e.target.value)}
               />
             </FormField>
           </div>

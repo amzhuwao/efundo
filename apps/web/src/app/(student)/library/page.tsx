@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   searchResources,
@@ -16,9 +17,12 @@ import {
 import { getPrograms } from '@/lib/curriculum';
 
 export default function LibraryPage() {
+  const searchParams = useSearchParams();
   const [q, setQ] = useState('');
-  const [type, setType] = useState('');
-  const [educationLevel, setEducationLevel] = useState('');
+  const [type, setType] = useState(searchParams.get('type') ?? '');
+  const [educationLevel, setEducationLevel] = useState(
+    searchParams.get('educationLevel') ?? '',
+  );
   const [programId, setProgramId] = useState('');
   const [year, setYear] = useState('');
 
@@ -47,15 +51,23 @@ export default function LibraryPage() {
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Digital Library</h1>
           <p className="mt-1 text-slate-600">
-            Past papers, notes, textbooks, and more
+            Past papers, notes, textbooks, and curated external courses
           </p>
         </div>
-        <Link
-          href="/library/bookmarks"
-          className="text-sm font-medium text-efundo-primary hover:underline"
-        >
-          My bookmarks →
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/library?type=EXTERNAL_COURSE&educationLevel=OTHER"
+            className="rounded-lg border border-efundo-primary/30 bg-efundo-primary/5 px-4 py-2 text-sm font-medium text-efundo-primary hover:bg-efundo-primary/10"
+          >
+            Harvard free courses
+          </Link>
+          <Link
+            href="/library/bookmarks"
+            className="text-sm font-medium text-efundo-primary hover:underline self-center"
+          >
+            My bookmarks →
+          </Link>
+        </div>
       </div>
 
       <div className="mt-8 grid gap-3 rounded-xl border bg-white p-4 md:grid-cols-4">
@@ -120,6 +132,14 @@ export default function LibraryPage() {
         </select>
       </div>
 
+      {type === 'EXTERNAL_COURSE' && (
+        <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          External course listings link to Harvard University (pll.harvard.edu). eFundo does not
+          host or reproduce Harvard course materials — enroll on Harvard&apos;s site to access
+          content.
+        </p>
+      )}
+
       {isLoading ? (
         <p className="mt-12 text-center text-slate-500">Loading resources...</p>
       ) : data?.data.length === 0 ? (
@@ -151,7 +171,10 @@ export default function LibraryPage() {
                 {resource.fileSize && (
                   <span>· {formatFileSize(resource.fileSize)}</span>
                 )}
-                <span>· {resource.downloadCount} downloads</span>
+                {resource.externalUrl && <span>· External link</span>}
+                {!resource.externalUrl && (
+                  <span>· {resource.downloadCount} downloads</span>
+                )}
               </div>
             </Link>
           ))}

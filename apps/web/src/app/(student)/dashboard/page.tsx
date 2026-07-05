@@ -1,12 +1,22 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
+import { isAdminRole } from '@/lib/roles';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user } = useAuthStore();
 
-  if (!user) return null;
+  useEffect(() => {
+    if (user && isAdminRole(user.role)) {
+      router.replace('/admin');
+    }
+  }, [user, router]);
+
+  if (!user || isAdminRole(user.role)) return null;
 
   return (
     <div>
@@ -41,6 +51,15 @@ export default function DashboardPage() {
           <h3 className="font-semibold text-slate-900">Study Forum</h3>
           <p className="mt-1 text-sm text-slate-600">
             Ask questions and discuss with classmates
+          </p>
+        </Link>
+        <Link
+          href="/assistant"
+          className="rounded-2xl border border-efundo-primary/30 bg-efundo-primary/5 p-6 shadow-sm transition hover:border-efundo-primary/50"
+        >
+          <h3 className="font-semibold text-slate-900">AI study tutor</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Ask questions and upload assignments for interactive help
           </p>
         </Link>
         <div className="rounded-2xl border bg-white p-6 shadow-sm opacity-60">

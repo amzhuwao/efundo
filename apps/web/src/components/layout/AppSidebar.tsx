@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
+import { getHomeHref, isAdminRole } from '@/lib/roles';
 
 export interface AppNavItem {
   href: string;
@@ -10,18 +11,20 @@ export interface AppNavItem {
   description?: string;
   roles?: string[];
   exact?: boolean;
+  adminHref?: string;
 }
 
 const NAV_SECTIONS: { title: string; items: AppNavItem[] }[] = [
   {
     title: 'Home',
-    items: [{ href: '/dashboard', label: 'Dashboard', exact: true }],
+    items: [{ href: '/dashboard', label: 'Dashboard', exact: true, adminHref: '/admin' }],
   },
   {
     title: 'Learn',
     items: [
       { href: '/library', label: 'Library', description: 'Past papers & notes' },
       { href: '/learn', label: 'Lessons', description: 'Courses & modules' },
+      { href: '/assistant', label: 'AI tutor', description: 'Ask & upload assignments' },
       { href: '/forum', label: 'Forum', description: 'Discussions & Q&A' },
       { href: '/library/bookmarks', label: 'Bookmarks', description: 'Saved resources' },
     ],
@@ -47,16 +50,21 @@ const NAV_SECTIONS: { title: string; items: AppNavItem[] }[] = [
         roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LECTURER'],
       },
       {
-        href: '/admin',
-        label: 'Admin dashboard',
-        description: 'Overview & stats',
-        roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'MODERATOR'],
-        exact: true,
+        href: '/admin/lessons/ai',
+        label: 'AI course builder',
+        description: 'Generate from PDFs & videos',
+        roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LECTURER'],
       },
       {
         href: '/admin/curriculum',
-        label: 'Curriculum',
-        description: 'Levels, programs & subjects',
+        label: 'Programs',
+        description: 'Grades, forms & courses',
+        roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
+      },
+      {
+        href: '/admin/subjects',
+        label: 'Subjects',
+        description: 'Create & manage subjects',
         roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
       },
       {
@@ -84,16 +92,20 @@ function NavLink({
   item,
   pathname,
   onNavigate,
+  userRole,
 }: {
   item: AppNavItem;
   pathname: string;
   onNavigate?: () => void;
+  userRole: string;
 }) {
-  const active = isActive(pathname, item.href, item.exact);
+  const href =
+    item.adminHref && isAdminRole(userRole) ? item.adminHref : item.href;
+  const active = isActive(pathname, href, item.exact);
 
   return (
     <Link
-      href={item.href}
+      href={href}
       onClick={onNavigate}
       className={`block rounded-lg px-3 py-2.5 transition ${
         active
@@ -121,20 +133,22 @@ export function AppSidebar({
 
   if (!user) return null;
 
+  const homeHref = getHomeHref(user.role);
+
   return (
     <aside
       className={`flex h-full w-64 flex-col bg-slate-900 text-white ${className}`}
     >
       <div className="border-b border-white/10 px-5 py-5">
         <Link
-          href="/dashboard"
+          href={homeHref}
           onClick={onNavigate}
           className="text-lg font-bold tracking-tight text-white"
         >
           eFundo
         </Link>
         <p className="mt-1 text-xs font-medium uppercase tracking-wider text-slate-400">
-          Learning platform
+          {isAdminRole(user.role) ? 'Admin' : 'Learning platform'}
         </p>
       </div>
 
@@ -157,6 +171,7 @@ export function AppSidebar({
                     item={item}
                     pathname={pathname}
                     onNavigate={onNavigate}
+                    userRole={user.role}
                   />
                 ))}
               </div>

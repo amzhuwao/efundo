@@ -32,6 +32,7 @@ enum ResourceType {
   REVISION_GUIDE
   SLIDES
   CASE_STUDY
+  EXTERNAL_COURSE
 }
 
 enum ResourceStatus {
@@ -75,6 +76,8 @@ model User {
   discussions       Discussion[]  @relation("DiscussionAuthor")
   comments          Comment[]
   createdLessons    Lesson[]      @relation("LessonAuthor")
+  lessonAiProjects  LessonAiProject[]
+  aiAssistantSessions AiAssistantSession[]
 
   @@index([programId])
   @@index([educationLevel])
@@ -119,6 +122,8 @@ model Subject {
   resources   Resource[]
   modules     Module[]
   discussions Discussion[]
+  aiProjects  LessonAiProject[]
+  aiAssistantSessions AiAssistantSession[]
 
   @@unique([programId, code])
   @@index([programId])
@@ -159,6 +164,11 @@ model Resource {
   downloadCount   Int            @default(0) @map("download_count")
   viewCount       Int            @default(0) @map("view_count")
   tags            String[]       @default([])
+  externalUrl     String?        @map("external_url")
+  sourceName      String?        @map("source_name")
+  sourceCatalogUrl String?       @map("source_catalog_url")
+  attributionNotice String?     @map("attribution_notice")
+  durationWeeks   Int?           @map("duration_weeks")
   rejectionReason String?        @map("rejection_reason")
   createdAt       DateTime       @default(now()) @map("created_at")
   updatedAt       DateTime       @updatedAt @map("updated_at")
@@ -298,6 +308,8 @@ model Lesson {
   author   User?            @relation("LessonAuthor", fields: [authorId], references: [id])
   progress LessonProgress[]
 
+  aiAssistantSessions AiAssistantSession[]
+
   @@unique([topicId, slug])
   @@index([topicId])
   @@index([status])
@@ -355,4 +367,129 @@ model Comment {
 
   @@index([discussionId])
   @@map("comments")
+}
+
+enum AiProjectStatus {
+  DRAFT
+  PROCESSING
+  READY
+  APPLIED
+  FAILED
+}
+
+enum AiSourceStatus {
+  PENDING
+  EXTRACTING
+  READY
+  FAILED
+}
+
+enum AiSourceType {
+  PDF
+  VIDEO
+  TEXT
+}
+
+model LessonAiProject {
+  id               String          @id @default(cuid())
+  subjectId        String          @map("subject_id")
+  title            String
+  instructions     String?
+  status           AiProjectStatus @default(DRAFT)
+  generatedOutline Json?           @map("generated_outline")
+  errorMessage     String?         @map("error_message")
+  authorId         String          @map("author_id")
+  appliedAt        DateTime?       @map("applied_at")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  subject Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  author  User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  sources LessonAiSource[]
+
+  @@index([subjectId])
+  @@index([authorId])
+  @@index([status])
+  @@map("lesson_ai_projects")
+}
+
+model LessonAiSource {
+  id            String         @id @default(cuid())
+  projectId     String         @map("project_id")
+  title         String
+  type          AiSourceType
+  fileKey       String?        @map("file_key")
+  fileName      String?        @map("file_name")
+  mimeType      String?        @map("mime_type")
+  fileSize      Int?           @map("file_size")
+  extractedText String?        @map("extracted_text") @db.Text
+  status        AiSourceStatus @default(PENDING)
+  errorMessage  String?        @map("error_message")
+  orderIndex    Int            @default(0) @map("order_index")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  project LessonAiProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("lesson_ai_sources")
+}
+
+enum AiChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model AiAssistantSession {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  subjectId String?  @map("subject_id")
+  lessonId  String?  @map("lesson_id")
+  title     String   @default("New conversation")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject  Subject?             @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  lesson   Lesson?              @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  messages AiAssistantMessage[]
+  files    AiAssistantFile[]
+
+  @@index([userId])
+  @@index([subjectId])
+  @@index([lessonId])
+  @@map("ai_assistant_sessions")
+}
+
+model AiAssistantMessage {
+  id        String     @id @default(cuid())
+  sessionId String     @map("session_id")
+  role      AiChatRole
+  content   String     @db.Text
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  session AiAssistantSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("ai_assistant_messages")
+}
+
+model AiAssistantFile {
+  id            String         @id @default(cuid())
+  sessionId     String         @map("session_id")
+  fileName      String         @map("file_name")
+  fileKey       String         @map("file_key")
+  mimeType      String         @map("mime_type")
+  fileSize      Int            @map("file_size")
+  extractedText String?        @map("extracted_text") @db.Text
+  status        AiSourceStatus @default(PENDING)
+  errorMessage  String?        @map("error_message")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  session AiAssistantSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("ai_assistant_files")
 }

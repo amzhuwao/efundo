@@ -12,6 +12,7 @@ export const RESOURCE_TYPES = [
   { value: 'REVISION_GUIDE', label: 'Revision Guide' },
   { value: 'SLIDES', label: 'Slides' },
   { value: 'CASE_STUDY', label: 'Case Study' },
+  { value: 'EXTERNAL_COURSE', label: 'External Course' },
 ] as const;
 
 export function formatResourceType(type: string) {
