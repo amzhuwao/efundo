@@ -6,6 +6,10 @@ import {
   LessonStatus,
   Difficulty,
   EducationLevel,
+  QuestionType,
+  QuestionStatus,
+  QuizType,
+  QuizStatus,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as fs from 'fs';
@@ -347,6 +351,166 @@ async function main() {
       },
     });
     console.log('Seeded LMS lessons and forum for CS301');
+
+    // Phase 4: Assessment — CS301 question bank & quizzes
+    const q1 = await prisma.question.upsert({
+      where: { id: 'seed-cs301-q1' },
+      update: {},
+      create: {
+        id: 'seed-cs301-q1',
+        subjectId: cs301SubjectId,
+        topicId: introTopic.id,
+        type: QuestionType.MULTIPLE_CHOICE,
+        stem: 'What does DBMS stand for?',
+        options: [
+          { id: 'a', text: 'Data Backup Management System' },
+          { id: 'b', text: 'Database Management System' },
+          { id: 'c', text: 'Digital Binary Memory Storage' },
+          { id: 'd', text: 'Distributed Batch Message Service' },
+        ],
+        correctAnswer: { type: 'single', value: 'b' },
+        explanation: 'A DBMS is software that manages databases — creating, reading, updating, and deleting data.',
+        difficulty: Difficulty.BEGINNER,
+        tags: ['fundamentals', 'dbms'],
+        status: QuestionStatus.PUBLISHED,
+        authorId: admin.id,
+      },
+    });
+
+    const q2 = await prisma.question.upsert({
+      where: { id: 'seed-cs301-q2' },
+      update: {},
+      create: {
+        id: 'seed-cs301-q2',
+        subjectId: cs301SubjectId,
+        topicId: introTopic.id,
+        type: QuestionType.TRUE_FALSE,
+        stem: 'A relational database stores data in tables with rows and columns.',
+        correctAnswer: { type: 'boolean', value: true },
+        explanation: 'Relational databases organise data into tables (relations) with rows (records) and columns (attributes).',
+        difficulty: Difficulty.BEGINNER,
+        tags: ['relational'],
+        status: QuestionStatus.PUBLISHED,
+        authorId: admin.id,
+      },
+    });
+
+    const q3 = await prisma.question.upsert({
+      where: { id: 'seed-cs301-q3' },
+      update: {},
+      create: {
+        id: 'seed-cs301-q3',
+        subjectId: cs301SubjectId,
+        topicId: normTopic.id,
+        type: QuestionType.MULTIPLE_CHOICE,
+        stem: 'Which normal form eliminates partial dependencies on a composite primary key?',
+        options: [
+          { id: 'a', text: '1NF' },
+          { id: 'b', text: '2NF' },
+          { id: 'c', text: '3NF' },
+          { id: 'd', text: 'BCNF' },
+        ],
+        correctAnswer: { type: 'single', value: 'b' },
+        explanation: 'Second Normal Form (2NF) removes partial dependencies — when a non-key attribute depends on only part of a composite key.',
+        difficulty: Difficulty.INTERMEDIATE,
+        tags: ['normalization', '2nf'],
+        status: QuestionStatus.PUBLISHED,
+        authorId: admin.id,
+      },
+    });
+
+    const q4 = await prisma.question.upsert({
+      where: { id: 'seed-cs301-q4' },
+      update: {},
+      create: {
+        id: 'seed-cs301-q4',
+        subjectId: cs301SubjectId,
+        topicId: normTopic.id,
+        type: QuestionType.SHORT_ANSWER,
+        stem: 'What is the acronym for Third Normal Form?',
+        correctAnswer: { type: 'text', values: ['3NF', 'third normal form'], caseSensitive: false },
+        explanation: '3NF requires that all non-key attributes depend only on the primary key, not on other non-key attributes.',
+        difficulty: Difficulty.INTERMEDIATE,
+        tags: ['normalization', '3nf'],
+        status: QuestionStatus.PUBLISHED,
+        authorId: admin.id,
+      },
+    });
+
+    const q5 = await prisma.question.upsert({
+      where: { id: 'seed-cs301-q5' },
+      update: {},
+      create: {
+        id: 'seed-cs301-q5',
+        subjectId: cs301SubjectId,
+        topicId: normTopic.id,
+        type: QuestionType.FILL_BLANK,
+        stem: 'A ______ key uniquely identifies each row in a relational table.',
+        correctAnswer: { type: 'text', values: ['primary', 'primary key'], caseSensitive: false },
+        explanation: 'The primary key ensures each record is uniquely identifiable.',
+        difficulty: Difficulty.BEGINNER,
+        tags: ['keys'],
+        status: QuestionStatus.PUBLISHED,
+        authorId: admin.id,
+      },
+    });
+
+    const practiceQuiz = await prisma.quiz.upsert({
+      where: { subjectId_slug: { subjectId: cs301SubjectId, slug: 'db-fundamentals-practice' } },
+      update: {},
+      create: {
+        subjectId: cs301SubjectId,
+        title: 'Database Fundamentals Practice',
+        slug: 'db-fundamentals-practice',
+        description: 'Quick practice quiz covering DBMS basics and relational concepts.',
+        type: QuizType.PRACTICE,
+        questionCount: 5,
+        shuffleQuestions: true,
+        shuffleOptions: true,
+        allowBacktrack: true,
+        passingScore: 60,
+        status: QuizStatus.PUBLISHED,
+        authorId: admin.id,
+        publishedAt: new Date(),
+      },
+    });
+
+    const mockExam = await prisma.quiz.upsert({
+      where: { subjectId_slug: { subjectId: cs301SubjectId, slug: 'cs301-mock-exam' } },
+      update: {},
+      create: {
+        subjectId: cs301SubjectId,
+        title: 'CS301 Mock Exam',
+        slug: 'cs301-mock-exam',
+        description: 'Timed mock exam simulating the CS301 Database Systems paper.',
+        type: QuizType.MOCK_EXAM,
+        timeLimitMinutes: 45,
+        questionCount: 5,
+        shuffleQuestions: true,
+        shuffleOptions: true,
+        allowBacktrack: false,
+        passingScore: 50,
+        status: QuizStatus.PUBLISHED,
+        authorId: admin.id,
+        publishedAt: new Date(),
+      },
+    });
+
+    for (const [quizId, questionIds] of [
+      [practiceQuiz.id, [q1.id, q2.id, q3.id, q4.id, q5.id]],
+      [mockExam.id, [q1.id, q2.id, q3.id, q4.id, q5.id]],
+    ] as const) {
+      for (let i = 0; i < questionIds.length; i++) {
+        await prisma.quizQuestion.upsert({
+          where: {
+            quizId_questionId: { quizId, questionId: questionIds[i] },
+          },
+          update: {},
+          create: { quizId, questionId: questionIds[i], orderIndex: i },
+        });
+      }
+    }
+    console.log('Seeded assessment questions and quizzes for CS301');
   }
 
   console.log('Seed complete.');

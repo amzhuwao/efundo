@@ -7,6 +7,7 @@ import { getHomeHref, isAdminRole } from '@/lib/roles';
 
 const QUICK_NAV = [
   { href: '/learn', label: 'Lessons' },
+  { href: '/practice', label: 'Practice' },
   { href: '/library', label: 'Library' },
   { href: '/assistant', label: 'AI tutor' },
   { href: '/forum', label: 'Forum' },

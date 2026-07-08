@@ -62,10 +62,15 @@ export default function DashboardPage() {
             Ask questions and upload assignments for interactive help
           </p>
         </Link>
-        <div className="rounded-2xl border bg-white p-6 shadow-sm opacity-60">
+        <Link
+          href="/practice"
+          className="rounded-2xl border bg-white p-6 shadow-sm transition hover:border-efundo-primary/40"
+        >
           <h3 className="font-semibold text-slate-900">Practice Tests</h3>
-          <p className="mt-1 text-sm text-slate-600">Coming in Phase 4</p>
-        </div>
+          <p className="mt-1 text-sm text-slate-600">
+            Quizzes and timed mock exams with instant feedback
+          </p>
+        </Link>
       </div>
 
       {!user.programId && (

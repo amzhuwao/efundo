@@ -10,6 +10,7 @@ import { LmsModule } from './lms/lms.module';
 import { ForumModule } from './forum/forum.module';
 import { LessonAiModule } from './lesson-ai/lesson-ai.module';
 import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
+import { AssessmentModule } from './assessment/assessment.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -25,6 +26,7 @@ import { HealthController } from './health.controller';
     ForumModule,
     LessonAiModule,
     AiAssistantModule,
+    AssessmentModule,
   ],
   controllers: [HealthController],
 })

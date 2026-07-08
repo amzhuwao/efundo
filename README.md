@@ -114,8 +114,8 @@ Each institution includes a sample BSc Computer Science course with Year 1–4 s
 - [x] **Phase 1** — Auth, institutions, onboarding, admin shell
 - [x] **Phase 1.1** — Admin CRUD forms (institutions, catalog, users)
 - [x] **Phase 2** — Digital library (upload, search, downloads, bookmarks, moderation)
-- [ ] **Phase 3** — LMS (lessons, progress, forums)
-- [ ] **Phase 4** — Assessment engine (quizzes, mock exams)
+- [x] **Phase 3** — LMS (lessons, progress, forums, AI tutor, lesson authoring)
+- [ ] **Phase 4** — Assessment engine (quizzes, mock exams) *(in progress)*
 - [ ] **Phase 5** — Flutter mobile app
 - [ ] **Phase 6** — Premium subscriptions & AI assistant
 

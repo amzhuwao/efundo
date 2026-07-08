@@ -78,6 +78,9 @@ model User {
   createdLessons    Lesson[]      @relation("LessonAuthor")
   lessonAiProjects  LessonAiProject[]
   aiAssistantSessions AiAssistantSession[]
+  questions         Question[]
+  quizzes           Quiz[]
+  quizAttempts      QuizAttempt[]
 
   @@index([programId])
   @@index([educationLevel])
@@ -124,6 +127,8 @@ model Subject {
   discussions Discussion[]
   aiProjects  LessonAiProject[]
   aiAssistantSessions AiAssistantSession[]
+  questions   Question[]
+  quizzes     Quiz[]
 
   @@unique([programId, code])
   @@index([programId])
@@ -275,6 +280,7 @@ model Topic {
 
   module  Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   lessons Lesson[]
+  questions Question[]
 
   @@unique([moduleId, slug])
   @@index([moduleId])
@@ -492,4 +498,127 @@ model AiAssistantFile {
 
   @@index([sessionId])
   @@map("ai_assistant_files")
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+  FILL_BLANK
+}
+
+enum QuestionStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum QuizType {
+  PRACTICE
+  MOCK_EXAM
+}
+
+enum QuizStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  EXPIRED
+}
+
+model Question {
+  id            String         @id @default(cuid())
+  subjectId     String         @map("subject_id")
+  topicId       String?        @map("topic_id")
+  type          QuestionType
+  stem          String         @db.Text
+  options       Json?
+  correctAnswer Json           @map("correct_answer")
+  explanation   String?        @db.Text
+  difficulty    Difficulty     @default(BEGINNER)
+  tags          String[]       @default([])
+  status        QuestionStatus @default(DRAFT)
+  authorId      String?        @map("author_id")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  subject      Subject       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topic        Topic?        @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  author       User?         @relation(fields: [authorId], references: [id])
+  quizLinks    QuizQuestion[]
+
+  @@index([subjectId])
+  @@index([topicId])
+  @@index([status])
+  @@index([type])
+  @@map("questions")
+}
+
+model Quiz {
+  id               String     @id @default(cuid())
+  subjectId        String     @map("subject_id")
+  title            String
+  slug             String
+  description      String?
+  type             QuizType   @default(PRACTICE)
+  timeLimitMinutes Int?       @map("time_limit_minutes")
+  questionCount    Int        @default(10) @map("question_count")
+  shuffleQuestions Boolean    @default(true) @map("shuffle_questions")
+  shuffleOptions   Boolean    @default(true) @map("shuffle_options")
+  allowBacktrack   Boolean    @default(true) @map("allow_backtrack")
+  passingScore     Int        @default(50) @map("passing_score")
+  status           QuizStatus @default(DRAFT)
+  authorId         String?    @map("author_id")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+  publishedAt      DateTime?  @map("published_at")
+
+  subject   Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  author    User?          @relation(fields: [authorId], references: [id])
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+
+  @@unique([subjectId, slug])
+  @@index([subjectId])
+  @@index([status])
+  @@index([type])
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  quizId      String @map("quiz_id")
+  questionId  String @map("question_id")
+  orderIndex  Int    @default(0) @map("order_index")
+
+  quiz     Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([quizId, questionId])
+  @@index([quizId])
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id            String        @id @default(cuid())
+  userId        String        @map("user_id")
+  quizId        String        @map("quiz_id")
+  status        AttemptStatus @default(IN_PROGRESS)
+  score         Int?
+  correctCount  Int?          @map("correct_count")
+  totalCount    Int           @map("total_count")
+  answers       Json          @default("[]")
+  questionOrder String[]      @default([]) @map("question_order")
+  startedAt     DateTime      @default(now()) @map("started_at")
+  submittedAt   DateTime?     @map("submitted_at")
+  expiresAt     DateTime?     @map("expires_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([quizId])
+  @@index([status])
+  @@map("quiz_attempts")
 }

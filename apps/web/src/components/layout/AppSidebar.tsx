@@ -22,8 +22,9 @@ const NAV_SECTIONS: { title: string; items: AppNavItem[] }[] = [
   {
     title: 'Learn',
     items: [
-      { href: '/library', label: 'Library', description: 'Past papers & notes' },
       { href: '/learn', label: 'Lessons', description: 'Courses & modules' },
+      { href: '/practice', label: 'Practice tests', description: 'Quizzes & mock exams' },
+      { href: '/library', label: 'Library', description: 'Past papers & notes' },
       { href: '/assistant', label: 'AI tutor', description: 'Ask & upload assignments' },
       { href: '/forum', label: 'Forum', description: 'Discussions & Q&A' },
       { href: '/library/bookmarks', label: 'Bookmarks', description: 'Saved resources' },
