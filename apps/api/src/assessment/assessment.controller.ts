@@ -93,6 +93,25 @@ export class AssessmentController {
     return this.assessmentService.getMyStats(req.user.id);
   }
 
+  @Get('certificates/me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'My mock exam certificates' })
+  myCertificates(@Request() req: { user: { id: string } }) {
+    return this.assessmentService.listMyCertificates(req.user.id);
+  }
+
+  @Get('certificates/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get certificate details' })
+  getCertificate(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.assessmentService.getCertificate(id, req.user.id);
+  }
+
   // ── Authoring (lecturer/admin) ────────────────────────────────────────────
 
   @Get('manage/questions')
@@ -142,6 +161,17 @@ export class AssessmentController {
     return this.assessmentService.publishQuestion(id, req.user.role);
   }
 
+  @Post('manage/questions/:id/unpublish')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.INSTITUTION_ADMIN, UserRole.LECTURER)
+  @ApiBearerAuth()
+  unpublishQuestion(
+    @Param('id') id: string,
+    @Request() req: { user: { role: UserRole } },
+  ) {
+    return this.assessmentService.unpublishQuestion(id, req.user.role);
+  }
+
   @Delete('manage/questions/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN, UserRole.INSTITUTION_ADMIN, UserRole.LECTURER)
@@ -159,6 +189,14 @@ export class AssessmentController {
   @ApiBearerAuth()
   listManageQuizzes(@Query('subjectId') subjectId?: string) {
     return this.assessmentService.listQuizzes(subjectId, false);
+  }
+
+  @Get('manage/quizzes/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.INSTITUTION_ADMIN, UserRole.LECTURER)
+  @ApiBearerAuth()
+  getManageQuiz(@Param('id') id: string) {
+    return this.assessmentService.getQuiz(id, true);
   }
 
   @Post('manage/quizzes')
@@ -193,5 +231,27 @@ export class AssessmentController {
     @Request() req: { user: { role: UserRole } },
   ) {
     return this.assessmentService.publishQuiz(id, req.user.role);
+  }
+
+  @Post('manage/quizzes/:id/unpublish')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.INSTITUTION_ADMIN, UserRole.LECTURER)
+  @ApiBearerAuth()
+  unpublishQuiz(
+    @Param('id') id: string,
+    @Request() req: { user: { role: UserRole } },
+  ) {
+    return this.assessmentService.unpublishQuiz(id, req.user.role);
+  }
+
+  @Delete('manage/quizzes/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.INSTITUTION_ADMIN, UserRole.LECTURER)
+  @ApiBearerAuth()
+  deleteQuiz(
+    @Param('id') id: string,
+    @Request() req: { user: { role: UserRole } },
+  ) {
+    return this.assessmentService.deleteQuiz(id, req.user.role);
   }
 }

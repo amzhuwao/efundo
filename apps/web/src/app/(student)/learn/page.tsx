@@ -297,9 +297,17 @@ export default function LearnPage() {
 
       {subjectId && (
         <section className="mt-8">
-          <h2 className="text-lg font-semibold text-slate-900">
-            {subjects.find((s) => s.id === subjectId)?.code} lessons
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-slate-900">
+              {subjects.find((s) => s.id === subjectId)?.code} lessons
+            </h2>
+            <Link
+              href={`/practice?subject=${subjectId}`}
+              className="text-sm font-medium text-efundo-primary hover:underline"
+            >
+              Practice quizzes →
+            </Link>
+          </div>
           {modulesLoading ? (
             <p className="mt-6 text-center text-slate-500">Loading lessons...</p>
           ) : modules.length === 0 ? (

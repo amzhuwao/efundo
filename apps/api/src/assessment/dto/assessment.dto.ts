@@ -9,6 +9,7 @@ import {
   Max,
   ValidateNested,
   IsObject,
+  IsDefined,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -223,6 +224,7 @@ export class AttemptAnswerDto {
   questionId: string;
 
   @ApiProperty()
+  @IsDefined()
   answer: string | boolean;
 }
 

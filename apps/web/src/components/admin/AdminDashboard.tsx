@@ -17,6 +17,12 @@ const QUICK_ACTIONS = [
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LECTURER'],
   },
   {
+    title: 'Assessment authoring',
+    desc: 'Question bank, practice quizzes, mock exams',
+    href: '/admin/assessment',
+    roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LECTURER'],
+  },
+  {
     title: 'Programs',
     desc: 'Add grades, forms, and courses by level',
     href: '/admin/curriculum',

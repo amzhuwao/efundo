@@ -18,7 +18,8 @@
     "db:setup": "bash scripts/setup-postgres.sh",
     "db:seed": "npm run db:seed -w @efundo/api",
     "db:studio": "npm run db:studio -w @efundo/api",
-    "lint": "npm run lint -w @efundo/api && npm run lint -w @efundo/web"
+    "lint": "npm run lint -w @efundo/api && npm run lint -w @efundo/web",
+    "mobile:setup": "bash scripts/setup-mobile.sh"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

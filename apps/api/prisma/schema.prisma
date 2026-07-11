@@ -81,6 +81,7 @@ model User {
   questions         Question[]
   quizzes           Quiz[]
   quizAttempts      QuizAttempt[]
+  quizCertificates  QuizCertificate[]
 
   @@index([programId])
   @@index([educationLevel])
@@ -505,6 +506,7 @@ enum QuestionType {
   TRUE_FALSE
   SHORT_ANSWER
   FILL_BLANK
+  ESSAY
 }
 
 enum QuestionStatus {
@@ -579,6 +581,7 @@ model Quiz {
   author    User?          @relation(fields: [authorId], references: [id])
   questions QuizQuestion[]
   attempts  QuizAttempt[]
+  certificates QuizCertificate[]
 
   @@unique([subjectId, slug])
   @@index([subjectId])
@@ -616,9 +619,27 @@ model QuizAttempt {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  certificate QuizCertificate?
 
   @@index([userId])
   @@index([quizId])
   @@index([status])
   @@map("quiz_attempts")
+}
+
+model QuizCertificate {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  attemptId String   @unique @map("attempt_id")
+  quizId    String   @map("quiz_id")
+  code      String   @unique
+  score     Int
+  issuedAt  DateTime @default(now()) @map("issued_at")
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempt QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  quiz    Quiz        @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("quiz_certificates")
 }

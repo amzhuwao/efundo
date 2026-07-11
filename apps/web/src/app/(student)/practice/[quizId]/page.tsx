@@ -283,6 +283,16 @@ function QuestionCard({
             className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm"
           />
         )}
+
+        {question.type === 'ESSAY' && (
+          <textarea
+            value={typeof value === 'string' ? value : ''}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Write your essay response…"
+            rows={8}
+            className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm"
+          />
+        )}
       </div>
     </div>
   );

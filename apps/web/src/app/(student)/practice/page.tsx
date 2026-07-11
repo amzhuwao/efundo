@@ -81,10 +81,16 @@ export default function PracticePage() {
             Test your knowledge with practice quizzes and timed mock exams
           </p>
         </div>
+        <Link
+          href="/practice/certificates"
+          className="text-sm font-medium text-efundo-primary hover:underline"
+        >
+          My certificates →
+        </Link>
       </div>
 
       {stats && stats.totalAttempts > 0 && (
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Attempts</p>
             <p className="mt-1 text-2xl font-bold text-slate-900">{stats.totalAttempts}</p>
@@ -96,6 +102,10 @@ export default function PracticePage() {
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Passed</p>
             <p className="mt-1 text-2xl font-bold text-green-600">{stats.passed}</p>
+          </div>
+          <div className="rounded-xl border bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Certificates</p>
+            <p className="mt-1 text-2xl font-bold text-efundo-primary">{stats.certificates ?? 0}</p>
           </div>
         </div>
       )}

@@ -16,9 +16,20 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',') ?? [
-      'http://localhost:3000',
-    ],
+    origin: (origin, callback) => {
+      const configured = process.env.CORS_ORIGIN?.split(',').map((s) => s.trim()) ?? [
+        'http://localhost:3000',
+      ];
+      // Flutter web / desktop tooling often uses a random localhost port.
+      const isLocalDev =
+        !origin ||
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+      if (!origin || configured.includes(origin) || isLocalDev) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`CORS blocked for origin: ${origin}`), false);
+    },
     credentials: true,
   });
 

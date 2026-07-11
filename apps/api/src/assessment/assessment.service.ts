@@ -9,9 +9,11 @@ import {
   QuizStatus,
   AttemptStatus,
   QuestionType,
+  QuizType,
   UserRole,
   Prisma,
 } from '@prisma/client';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateQuestionDto,
@@ -23,10 +25,13 @@ import {
 
 type McqOption = { id: string; text: string };
 type CorrectAnswer = {
-  type: 'single' | 'boolean' | 'text';
+  type: 'single' | 'boolean' | 'text' | 'essay';
   value?: string | boolean;
   values?: string[];
   caseSensitive?: boolean;
+  rubric?: string;
+  sampleAnswer?: string;
+  maxPoints?: number;
 };
 
 @Injectable()
@@ -76,7 +81,8 @@ export class AssessmentService {
     type: QuestionType,
     correct: CorrectAnswer,
     answer: string | boolean,
-  ): boolean {
+  ): boolean | null {
+    if (type === QuestionType.ESSAY) return null;
     if (type === QuestionType.TRUE_FALSE) {
       return correct.type === 'boolean' && answer === correct.value;
     }
@@ -92,6 +98,43 @@ export class AssessmentService {
     return accepted.some((v) =>
       caseSensitive ? text === v : text.toLowerCase() === v.toLowerCase(),
     );
+  }
+
+  private certificateCode() {
+    return `EF-${randomBytes(4).toString('hex').toUpperCase()}`;
+  }
+
+  private async issueCertificateIfEligible(
+    userId: string,
+    attemptId: string,
+    quiz: { id: string; type: QuizType },
+    score: number,
+    passed: boolean,
+    hasPendingEssays: boolean,
+  ) {
+    if (
+      !passed ||
+      quiz.type !== QuizType.MOCK_EXAM ||
+      hasPendingEssays ||
+      score == null
+    ) {
+      return null;
+    }
+
+    const existing = await this.prisma.quizCertificate.findUnique({
+      where: { attemptId },
+    });
+    if (existing) return existing;
+
+    return this.prisma.quizCertificate.create({
+      data: {
+        userId,
+        attemptId,
+        quizId: quiz.id,
+        code: this.certificateCode(),
+        score,
+      },
+    });
   }
 
   // ── Questions (admin/lecturer) ──────────────────────────────────────────
@@ -147,6 +190,14 @@ export class AssessmentService {
     return this.prisma.question.update({
       where: { id },
       data: { status: QuestionStatus.PUBLISHED },
+    });
+  }
+
+  async unpublishQuestion(id: string, role: UserRole) {
+    this.assertAuthor(role);
+    return this.prisma.question.update({
+      where: { id },
+      data: { status: QuestionStatus.DRAFT },
     });
   }
 
@@ -260,6 +311,26 @@ export class AssessmentService {
     });
   }
 
+  async unpublishQuiz(id: string, role: UserRole) {
+    this.assertAuthor(role);
+    return this.prisma.quiz.update({
+      where: { id },
+      data: { status: QuizStatus.DRAFT, publishedAt: null },
+    });
+  }
+
+  async deleteQuiz(id: string, role: UserRole) {
+    this.assertAuthor(role);
+    const attempts = await this.prisma.quizAttempt.count({ where: { quizId: id } });
+    if (attempts > 0) {
+      throw new BadRequestException(
+        'Cannot delete a quiz with student attempts. Unpublish it instead.',
+      );
+    }
+    await this.prisma.quiz.delete({ where: { id } });
+    return { ok: true };
+  }
+
   // ── Attempts ──────────────────────────────────────────────────────────────
 
   async startAttempt(quizId: string, userId: string) {
@@ -366,32 +437,53 @@ export class AssessmentService {
     });
     const questionMap = new Map(questions.map((q) => [q.id, q]));
 
+    const answerMap = new Map(dto.answers.map((a) => [a.questionId, a.answer]));
+    const orderedQuestions = attempt.questionOrder
+      .map((id) => questionMap.get(id))
+      .filter((q): q is NonNullable<typeof q> => !!q);
+
     let correctCount = 0;
-    const gradedAnswers = dto.answers.map((a) => {
-      const question = questionMap.get(a.questionId);
-      if (!question) {
-        return {
-          questionId: a.questionId,
-          answer: a.answer,
-          isCorrect: false,
-        };
+    const gradedAnswers: Array<Record<string, unknown>> = [];
+
+    for (const question of orderedQuestions) {
+      const answer = answerMap.get(question.id);
+
+      if (question.type === QuestionType.ESSAY) {
+        gradedAnswers.push({
+          questionId: question.id,
+          answer: answer ?? '',
+          isCorrect: null,
+          pendingReview: true,
+          rubric: (question.correctAnswer as CorrectAnswer).rubric,
+        });
+        continue;
       }
-      const isCorrect = this.gradeAnswer(
-        question.type,
-        question.correctAnswer as CorrectAnswer,
-        a.answer,
-      );
+
+      const isCorrect =
+        answer != null &&
+        this.gradeAnswer(
+          question.type,
+          question.correctAnswer as CorrectAnswer,
+          answer,
+        ) === true;
       if (isCorrect) correctCount++;
-      return {
-        questionId: a.questionId,
-        answer: a.answer,
+      gradedAnswers.push({
+        questionId: question.id,
+        answer: answer ?? '',
         isCorrect,
         explanation: question.explanation,
         correctAnswer: question.correctAnswer,
-      };
-    });
+      });
+    }
 
-    const score = Math.round((correctCount / attempt.totalCount) * 100);
+    const gradableCount = orderedQuestions.filter(
+      (q) => q.type !== QuestionType.ESSAY,
+    ).length;
+    const hasPendingEssays = gradedAnswers.some((a) => a.isCorrect === null);
+    const score =
+      gradableCount > 0 ? Math.round((correctCount / gradableCount) * 100) : null;
+    const passed =
+      score != null && score >= attempt.quiz.passingScore && !hasPendingEssays;
 
     const updated = await this.prisma.quizAttempt.update({
       where: { id: attemptId },
@@ -415,9 +507,22 @@ export class AssessmentService {
       },
     });
 
+    const certificate = await this.issueCertificateIfEligible(
+      userId,
+      attemptId,
+      updated.quiz,
+      score ?? 0,
+      passed,
+      hasPendingEssays,
+    );
+
     return {
       ...updated,
-      passed: score >= updated.quiz.passingScore,
+      passed,
+      hasPendingEssays,
+      certificate: certificate
+        ? { id: certificate.id, code: certificate.code, issuedAt: certificate.issuedAt }
+        : null,
     };
   }
 
@@ -434,14 +539,65 @@ export class AssessmentService {
             subject: { select: { id: true, code: true, name: true } },
           },
         },
+        certificate: {
+          select: { id: true, code: true, issuedAt: true, score: true },
+        },
       },
     });
     if (!attempt) throw new NotFoundException('Attempt not found');
     if (attempt.userId !== userId) throw new ForbiddenException();
+    const answers = Array.isArray(attempt.answers) ? attempt.answers : [];
+    const hasPendingEssays = answers.some(
+      (a) => typeof a === 'object' && a != null && (a as { isCorrect?: boolean | null }).isCorrect === null,
+    );
+    const passed =
+      attempt.score != null &&
+      attempt.score >= attempt.quiz.passingScore &&
+      !hasPendingEssays;
     return {
       ...attempt,
-      passed: attempt.score != null && attempt.score >= attempt.quiz.passingScore,
+      passed,
+      hasPendingEssays,
     };
+  }
+
+  listMyCertificates(userId: string) {
+    return this.prisma.quizCertificate.findMany({
+      where: { userId },
+      include: {
+        quiz: {
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            subject: { select: { id: true, code: true, name: true } },
+          },
+        },
+        attempt: { select: { id: true, submittedAt: true } },
+      },
+      orderBy: { issuedAt: 'desc' },
+    });
+  }
+
+  async getCertificate(certificateId: string, userId: string) {
+    const cert = await this.prisma.quizCertificate.findUnique({
+      where: { id: certificateId },
+      include: {
+        user: { select: { fullName: true, email: true } },
+        quiz: {
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            subject: { select: { id: true, code: true, name: true } },
+          },
+        },
+        attempt: { select: { id: true, submittedAt: true } },
+      },
+    });
+    if (!cert) throw new NotFoundException('Certificate not found');
+    if (cert.userId !== userId) throw new ForbiddenException();
+    return cert;
   }
 
   listMyAttempts(userId: string, limit = 20) {
@@ -466,7 +622,13 @@ export class AssessmentService {
     const attempts = await this.prisma.quizAttempt.findMany({
       where: { userId, status: AttemptStatus.SUBMITTED },
       include: {
-        quiz: { select: { subjectId: true, subject: { select: { code: true, name: true } } } },
+        quiz: {
+          select: {
+            subjectId: true,
+            passingScore: true,
+            subject: { select: { code: true, name: true } },
+          },
+        },
       },
     });
 
@@ -476,7 +638,7 @@ export class AssessmentService {
         ? Math.round(attempts.reduce((s, a) => s + (a.score ?? 0), 0) / totalAttempts)
         : 0;
     const passed = attempts.filter(
-      (a) => a.score != null && a.quiz && a.score >= 50,
+      (a) => a.score != null && a.score >= a.quiz.passingScore,
     ).length;
 
     const bySubject = new Map<
@@ -509,10 +671,15 @@ export class AssessmentService {
       .sort((a, b) => a.avgScore - b.avgScore)
       .slice(0, 5);
 
+    const certificates = await this.prisma.quizCertificate.count({
+      where: { userId },
+    });
+
     return {
       totalAttempts,
       avgScore,
       passed,
+      certificates,
       recentAttempts: attempts.slice(0, 5),
       subjectStats,
       weakAreas,

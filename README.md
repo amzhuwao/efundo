@@ -17,11 +17,13 @@ Learning platform for Zimbabwean students — past exam papers, notes, textbooks
 efundo/
 ├── apps/
 │   ├── api/          # NestJS REST API
-│   └── web/          # Next.js web app
+│   ├── web/          # Next.js web app
+│   └── mobile/       # Flutter app (Android & iOS)
 ├── packages/
 │   └── shared-types/ # Shared TypeScript types
 └── scripts/
-    └── setup-postgres.sh   # Native PostgreSQL setup
+    ├── setup-postgres.sh   # Native PostgreSQL setup
+    └── setup-mobile.sh     # Flutter platform project setup
 ```
 
 ## Prerequisites
@@ -115,8 +117,8 @@ Each institution includes a sample BSc Computer Science course with Year 1–4 s
 - [x] **Phase 1.1** — Admin CRUD forms (institutions, catalog, users)
 - [x] **Phase 2** — Digital library (upload, search, downloads, bookmarks, moderation)
 - [x] **Phase 3** — LMS (lessons, progress, forums, AI tutor, lesson authoring)
-- [ ] **Phase 4** — Assessment engine (quizzes, mock exams) *(in progress)*
-- [ ] **Phase 5** — Flutter mobile app
+- [x] **Phase 4** — Assessment engine (quizzes, mock exams, admin authoring, certificates)
+- [ ] **Phase 5** — Flutter mobile app *(in progress — auth, library, learn, in-app quizzes, offline downloads)*
 - [ ] **Phase 6** — Premium subscriptions & AI assistant
 
 ## Troubleshooting
@@ -145,6 +147,18 @@ npm run db:migrate     # Apply migrations (non-interactive)
 npm run db:migrate:dev # Create/apply migrations during development
 npm run db:seed      # Seed institutions & admin
 npm run db:studio    # Open Prisma Studio
+```
+
+### Mobile app (Phase 5)
+
+Requires [Flutter SDK](https://docs.flutter.dev/get-started/install). See [docs/MOBILE.md](docs/MOBILE.md).
+
+```bash
+./scripts/setup-mobile.sh
+cd apps/mobile
+flutter run -d linux
+# or: flutter run -d chrome
+# Android emulator: flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3001/api/v1
 ```
 
 ## License

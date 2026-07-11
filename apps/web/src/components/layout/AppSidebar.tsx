@@ -57,6 +57,12 @@ const NAV_SECTIONS: { title: string; items: AppNavItem[] }[] = [
         roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LECTURER'],
       },
       {
+        href: '/admin/assessment',
+        label: 'Assessment',
+        description: 'Questions, quizzes & mock exams',
+        roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LECTURER'],
+      },
+      {
         href: '/admin/curriculum',
         label: 'Programs',
         description: 'Grades, forms & courses',

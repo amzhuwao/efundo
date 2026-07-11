@@ -3,12 +3,21 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/auth-store';
 import { isAdminRole } from '@/lib/roles';
+import { getMyStats } from '@/lib/assessment';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, accessToken } = useAuthStore();
+  const token = accessToken();
+
+  const { data: stats } = useQuery({
+    queryKey: ['assessment-stats'],
+    queryFn: () => getMyStats(token!),
+    enabled: !!token,
+  });
 
   useEffect(() => {
     if (user && isAdminRole(user.role)) {
@@ -25,7 +34,47 @@ export default function DashboardPage() {
         Welcome back, {user.fullName.split(' ')[0]}!
       </p>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {stats && stats.totalAttempts > 0 && (
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Quiz attempts</p>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{stats.totalAttempts}</p>
+          </div>
+          <div className="rounded-xl border bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Average score</p>
+            <p className="mt-1 text-2xl font-bold text-efundo-primary">{stats.avgScore}%</p>
+          </div>
+          <div className="rounded-xl border bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Passed</p>
+            <p className="mt-1 text-2xl font-bold text-green-600">{stats.passed}</p>
+          </div>
+          <Link
+            href="/practice/certificates"
+            className="rounded-xl border bg-white p-5 shadow-sm transition hover:border-efundo-primary/40"
+          >
+            <p className="text-sm text-slate-500">Certificates</p>
+            <p className="mt-1 text-2xl font-bold text-efundo-primary">{stats.certificates ?? 0}</p>
+          </Link>
+        </div>
+      )}
+
+      {stats && stats.weakAreas.length > 0 && (
+        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-medium text-amber-900">Focus areas</p>
+          <ul className="mt-2 space-y-1">
+            {stats.weakAreas.slice(0, 3).map((area) => (
+              <li key={area.subjectCode} className="text-sm text-amber-800">
+                {area.subjectCode} — avg {area.avgScore}% ·{' '}
+                <Link href="/practice" className="underline">
+                  practice more
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Link
           href="/library"
           className="rounded-2xl border bg-white p-6 shadow-sm transition hover:border-efundo-primary/40"
