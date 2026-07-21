@@ -17,7 +17,7 @@ import {
 } from '@/components/admin/AdminForms';
 import {
   EDUCATION_LEVEL_LABELS,
-  type EducationLevel,
+  EducationLevel,
   type Program,
 } from '@efundo/shared-types';
 import {
@@ -36,7 +36,7 @@ export default function AdminCurriculumPage() {
   const token = useAuthStore((s) => s.accessToken());
   const queryClient = useQueryClient();
 
-  const [level, setLevel] = useState<EducationLevel>('PRIMARY');
+  const [level, setLevel] = useState<EducationLevel>(EducationLevel.PRIMARY);
   const [editing, setEditing] = useState<Program | null>(null);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');

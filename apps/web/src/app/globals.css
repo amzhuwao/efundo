@@ -1,3 +1,10 @@
+
+:root {
+  --efundo-red: #E31E24;
+  --efundo-blue: #1D22D3;
+  --efundo-blue-dark: #1518A8;
+}
+
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";

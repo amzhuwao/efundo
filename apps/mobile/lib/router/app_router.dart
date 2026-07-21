@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
+import '../features/splash/splash_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/home/home_screen.dart';
@@ -15,17 +16,39 @@ import '../features/practice/quiz_results_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../widgets/main_shell.dart';
 
+CustomTransitionPage<void> _fadeSlide(Widget child, GoRouterState state) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.04, 0),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authProvider);
 
   return GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/splash',
     refreshListenable: _RouterRefresh(ref),
     redirect: (context, state) {
-      final loggingIn = state.matchedLocation == '/login' ||
-          state.matchedLocation == '/register';
+      final loc = state.matchedLocation;
+      final onSplash = loc == '/splash';
+      final loggingIn = loc == '/login' || loc == '/register';
       final status = auth.status;
 
+      if (onSplash) return null;
       if (status == AuthStatus.unknown) return null;
 
       if (status == AuthStatus.unauthenticated && !loggingIn) {
@@ -38,12 +61,19 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(
+        path: '/splash',
+        pageBuilder: (context, state) =>
+            const NoTransitionPage(child: SplashScreen()),
+      ),
+      GoRoute(
         path: '/login',
-        builder: (context, state) => const LoginScreen(),
+        pageBuilder: (context, state) =>
+            _fadeSlide(const LoginScreen(), state),
       ),
       GoRoute(
         path: '/register',
-        builder: (context, state) => const RegisterScreen(),
+        pageBuilder: (context, state) =>
+            _fadeSlide(const RegisterScreen(), state),
       ),
       ShellRoute(
         builder: (context, state, child) => MainShell(child: child),
@@ -60,8 +90,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: ':id',
-                builder: (context, state) => ResourceDetailScreen(
-                  resourceId: state.pathParameters['id']!,
+                pageBuilder: (context, state) => _fadeSlide(
+                  ResourceDetailScreen(
+                    resourceId: state.pathParameters['id']!,
+                  ),
+                  state,
                 ),
               ),
             ],
@@ -78,14 +111,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: 'quiz/:quizId',
-                builder: (context, state) => TakeQuizScreen(
-                  quizId: state.pathParameters['quizId']!,
+                pageBuilder: (context, state) => _fadeSlide(
+                  TakeQuizScreen(quizId: state.pathParameters['quizId']!),
+                  state,
                 ),
               ),
               GoRoute(
                 path: 'results/:attemptId',
-                builder: (context, state) => QuizResultsScreen(
-                  attemptId: state.pathParameters['attemptId']!,
+                pageBuilder: (context, state) => _fadeSlide(
+                  QuizResultsScreen(
+                    attemptId: state.pathParameters['attemptId']!,
+                  ),
+                  state,
                 ),
               ),
             ],

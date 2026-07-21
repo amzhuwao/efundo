@@ -15,6 +15,7 @@ const footerLinks = {
   Legal: [
     { href: '/privacy', label: 'Privacy Policy' },
     { href: '/terms', label: 'Terms of Service' },
+    { href: '/account-deletion', label: 'Delete account' },
   ],
 };
 
@@ -61,6 +62,10 @@ export function SiteFooter() {
             {' · '}
             <Link href="/terms" className="hover:text-slate-300">
               Terms
+            </Link>
+            {' ? '}
+            <Link href="/account-deletion" className="hover:text-slate-300">
+              Delete account
             </Link>
           </p>
         </div>

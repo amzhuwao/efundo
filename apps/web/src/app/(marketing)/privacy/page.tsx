@@ -196,6 +196,20 @@ export default function PrivacyPage() {
         </section>
 
         <section>
+          <h2 className="text-xl font-semibold text-slate-900">
+            7. Account and data deletion
+          </h2>
+          <p className="mt-3 leading-relaxed">
+            You may request deletion of your account and associated personal
+            data at any time. See our{' '}
+            <Link href="/account-deletion" className="text-efundo-primary underline">
+              account deletion page
+            </Link>{' '}
+            for step-by-step instructions.
+          </p>
+        </section>
+
+        <section>
           <h2 className="text-xl font-semibold text-slate-900">8. Children&apos;s privacy</h2>
           <p className="mt-3 leading-relaxed">
             eFundo is intended for university and college students aged 16 and
