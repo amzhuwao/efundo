@@ -1,3 +1,1 @@
-# Google AdSense ads.txt for https://efundo.org
-# After AdSense approval, replace the line below with your real publisher ID:
-# google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+google.com, pub-1170846688780652, DIRECT, f08c47fec0942fa0
