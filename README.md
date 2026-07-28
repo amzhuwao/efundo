@@ -84,7 +84,7 @@ docker compose up -d
 
 | Role | Email | Password |
 |------|-------|----------|
-| Super Admin | admin@efundo.co.zw | Admin123! |
+| Super Admin | admin@efundo.org | Admin123! |
 
 ## Seeded institutions
 

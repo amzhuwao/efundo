@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getAllPosts } from '@/lib/blog/posts';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://efundo.co.zw';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://efundo.org';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/how-it-works',
     '/privacy',
     '/terms',
+    '/account-deletion',
     '/blog',
     '/study-guides',
     '/login',

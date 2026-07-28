@@ -44,6 +44,21 @@ export default function AboutPage() {
           searchable platform.
         </p>
 
+        <h2 className="text-2xl font-semibold text-slate-900">Who we are</h2>
+        <p className="leading-relaxed">
+          eFundo is an independent learning platform operated for students in
+          Zimbabwe. The public website is available at{' '}
+          <a href="https://efundo.org" className="text-efundo-primary underline">
+            https://efundo.org
+          </a>
+          . For support, partnerships, or privacy requests, use the contacts on
+          our{' '}
+          <Link href="/contact" className="text-efundo-primary underline">
+            contact page
+          </Link>
+          .
+        </p>
+
         <h2 className="text-2xl font-semibold text-slate-900">Our values</h2>
         <ul className="list-disc space-y-2 pl-6">
           <li>

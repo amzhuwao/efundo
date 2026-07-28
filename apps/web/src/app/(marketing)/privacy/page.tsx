@@ -11,13 +11,13 @@ export default function PrivacyPage() {
   return (
     <article className="mx-auto max-w-3xl px-4 py-16">
       <h1 className="text-4xl font-bold text-slate-900">Privacy Policy</h1>
-      <p className="mt-2 text-slate-500">Effective date: July 5, 2026</p>
+      <p className="mt-2 text-slate-500">Effective date: July 28, 2026</p>
 
       <div className="mt-8 space-y-8 text-slate-600">
         <section>
           <p className="leading-relaxed">
             eFundo (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) operates the website and
-            platform at efundo.co.zw (the &quot;Service&quot;). This Privacy Policy
+            platform at efundo.org (the &quot;Service&quot;). This Privacy Policy
             explains how we collect, use, disclose, and safeguard your
             information when you use our Service.
           </p>
@@ -186,10 +186,10 @@ export default function PrivacyPage() {
             Depending on your location, you may have the right to access, correct,
             delete, or export your personal data. Contact us at{' '}
             <a
-              href="mailto:privacy@efundo.co.zw"
+              href="mailto:privacy@efundo.org"
               className="text-efundo-primary underline"
             >
-              privacy@efundo.co.zw
+              privacy@efundo.org
             </a>{' '}
             to exercise these rights.
           </p>
@@ -197,7 +197,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2 className="text-xl font-semibold text-slate-900">
-            7. Account and data deletion
+            8. Account and data deletion
           </h2>
           <p className="mt-3 leading-relaxed">
             You may request deletion of your account and associated personal
@@ -210,7 +210,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-slate-900">8. Children&apos;s privacy</h2>
+          <h2 className="text-xl font-semibold text-slate-900">9. Children&apos;s privacy</h2>
           <p className="mt-3 leading-relaxed">
             eFundo is intended for university and college students aged 16 and
             older. We do not knowingly collect information from children under
@@ -220,7 +220,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2 className="text-xl font-semibold text-slate-900">
-            9. Changes to this policy
+            10. Changes to this policy
           </h2>
           <p className="mt-3 leading-relaxed">
             We may update this Privacy Policy from time to time. We will post the
@@ -229,14 +229,14 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-slate-900">10. Contact us</h2>
+          <h2 className="text-xl font-semibold text-slate-900">11. Contact us</h2>
           <p className="mt-3 leading-relaxed">
             For privacy-related questions, contact us at{' '}
             <a
-              href="mailto:privacy@efundo.co.zw"
+              href="mailto:privacy@efundo.org"
               className="text-efundo-primary underline"
             >
-              privacy@efundo.co.zw
+              privacy@efundo.org
             </a>{' '}
             or visit our{' '}
             <Link href="/contact" className="text-efundo-primary underline">

@@ -6,7 +6,7 @@ import { AuthHydration } from '@/components/auth/AuthHydration';
 
 const inter = Inter({ subsets: ['latin'] });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://efundo.co.zw';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://efundo.org';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -26,10 +26,23 @@ export const metadata: Metadata = {
     'eFundo',
   ],
   authors: [{ name: 'eFundo' }],
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_ZW',
+    url: SITE_URL,
     siteName: 'eFundo',
+    title: 'eFundo — Learn Smarter',
+    description:
+      'Past papers, notes, lessons, and practice tests for university students in Zimbabwe.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'eFundo — Learn Smarter',
+    description:
+      'Past papers, notes, lessons, and practice tests for university students in Zimbabwe.',
   },
   robots: {
     index: true,

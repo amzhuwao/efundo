@@ -63,7 +63,7 @@ export function SiteFooter() {
             <Link href="/terms" className="hover:text-slate-300">
               Terms
             </Link>
-            {' ? '}
+            {' · '}
             <Link href="/account-deletion" className="hover:text-slate-300">
               Delete account
             </Link>

@@ -22,6 +22,7 @@ export function CookieConsent() {
   function decline() {
     localStorage.setItem(CONSENT_KEY, 'declined');
     setVisible(false);
+    window.dispatchEvent(new Event('efundo-cookie-consent'));
   }
 
   if (!visible) return null;

@@ -22,10 +22,10 @@ export default function ContactPage() {
           </p>
           <p className="mt-3">
             <a
-              href="mailto:support@efundo.co.zw"
+              href="mailto:support@efundo.org"
               className="font-medium text-efundo-primary underline"
             >
-              support@efundo.co.zw
+              support@efundo.org
             </a>
           </p>
         </section>
@@ -40,10 +40,10 @@ export default function ContactPage() {
           </p>
           <p className="mt-3">
             <a
-              href="mailto:content@efundo.co.zw"
+              href="mailto:content@efundo.org"
               className="font-medium text-efundo-primary underline"
             >
-              content@efundo.co.zw
+              content@efundo.org
             </a>
           </p>
         </section>
@@ -55,10 +55,10 @@ export default function ContactPage() {
           </p>
           <p className="mt-3">
             <a
-              href="mailto:privacy@efundo.co.zw"
+              href="mailto:privacy@efundo.org"
               className="font-medium text-efundo-primary underline"
             >
-              privacy@efundo.co.zw
+              privacy@efundo.org
             </a>
           </p>
         </section>

@@ -1,17 +1,18 @@
 # Google AdSense Readiness Checklist
 
-Use this checklist before applying for Google AdSense.
+Use this checklist before applying for Google AdSense on **https://efundo.org**.
 
 ## Site requirements (on production domain)
 
-- [ ] **Custom domain** with HTTPS (e.g. `https://efundo.co.zw`) — localhost will not be approved
-- [ ] **Original content** — at least 15–20 pages of useful, unique content (blog + study guides added; expand with subject-specific resource pages in Phase 2)
-- [ ] **Clear navigation** — header and footer links to all main pages
-- [ ] **About page** — `/about`
-- [ ] **Contact page** — `/contact` with working email addresses
-- [ ] **Privacy Policy** — `/privacy` (includes AdSense & cookie disclosure)
-- [ ] **Terms of Service** — `/terms`
-- [ ] **No prohibited content** — no copyright-infringing downloads, adult content, or misleading material
+- [x] **Custom domain** with HTTPS — `https://efundo.org` (and `www`)
+- [x] **Original content** — marketing pages + 10 blog/study-guide articles
+- [x] **Clear navigation** — header and footer links to main pages
+- [x] **About page** — `/about`
+- [x] **Contact page** — `/contact` with monitored email addresses
+- [x] **Privacy Policy** — `/privacy` (includes AdSense & cookie disclosure)
+- [x] **Terms of Service** — `/terms` (includes copyright / takedown process)
+- [x] **Account deletion** — `/account-deletion`
+- [ ] **No prohibited content** — keep moderation active; remove infringing uploads promptly
 
 ## Technical setup (implemented)
 
@@ -19,8 +20,8 @@ Use this checklist before applying for Google AdSense.
 - [x] Cookie consent banner (loads ads only after acceptance)
 - [x] `ads.txt` at `/ads.txt` (add your publisher ID after approval)
 - [x] `sitemap.xml` via Next.js (`/sitemap.xml`)
-- [x] `robots.txt` (`/robots.txt`) — blocks `/dashboard`, `/admin`
-- [x] SEO metadata (title, description, Open Graph)
+- [x] `robots.txt` (`/robots.txt`) — blocks `/dashboard`, `/admin`, `/onboarding`
+- [x] SEO metadata (title, description, Open Graph, canonical base)
 - [x] AdSense script via `NEXT_PUBLIC_ADSENSE_CLIENT_ID` env var
 
 ## After AdSense approval
@@ -30,7 +31,7 @@ Use this checklist before applying for Google AdSense.
    google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
    ```
 
-2. Set environment variable in production:
+2. Set environment variable in production (`apps/web/.env.local`) and rebuild:
    ```
    NEXT_PUBLIC_ADSENSE_CLIENT_ID=ca-pub-XXXXXXXXXXXXXXXX
    ```
@@ -40,15 +41,16 @@ Use this checklist before applying for Google AdSense.
    - Dashboard
    - Onboarding
    - Admin
+   - Library download / authenticated app screens
 
 ## Recommended before applying
 
-1. Deploy to production with HTTPS
-2. ~~Add 10+ blog posts or study guides~~ — **10 articles live** at `/blog` and `/study-guides`
-3. Ensure contact emails are monitored (`support@efundo.co.zw`, etc.)
+1. ~~Deploy to production with HTTPS~~ — done on `efundo.org`
+2. ~~Add 10+ blog posts or study guides~~ — live at `/blog` and `/study-guides`
+3. Ensure contact emails are monitored (`support@efundo.org`, `privacy@efundo.org`, `content@efundo.org`)
 4. Link Privacy Policy in footer on every page
-5. Test cookie consent flow
-6. Submit sitemap in Google Search Console
+5. Test cookie consent flow (Accept loads ads only when client ID is set)
+6. Submit `https://efundo.org/sitemap.xml` in [Google Search Console](https://search.google.com/search-console)
 
 ## Apply
 

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function AccountDeletionPage() {
   const mailto =
-    'mailto:admin@efundo.co.zw?subject=Account%20deletion%20request';
+    'mailto:admin@efundo.org?subject=Account%20deletion%20request';
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-16">
@@ -34,7 +34,7 @@ export default function AccountDeletionPage() {
             <li>
               Email{' '}
               <a href={mailto} className="text-efundo-primary underline">
-                admin@efundo.co.zw
+                admin@efundo.org
               </a>{' '}
               from the email address registered on your account.
             </li>
@@ -76,7 +76,7 @@ export default function AccountDeletionPage() {
           <Link href="/privacy" className="text-efundo-primary underline">
             Privacy Policy
           </Link>
-          {' ? '}
+          {' · '}
           <Link href="/terms" className="text-efundo-primary underline">
             Terms of Service
           </Link>

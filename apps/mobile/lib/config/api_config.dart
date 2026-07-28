@@ -14,7 +14,7 @@ class ApiConfig {
 
   static const String siteUrl = String.fromEnvironment(
     'SITE_URL',
-    defaultValue: 'http://209.38.225.150',
+    defaultValue: 'https://efundo.org',
   );
 
   static String get accountDeletionUrl => '$siteUrl/account-deletion';

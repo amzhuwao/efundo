@@ -10,7 +10,7 @@ export default function TermsPage() {
   return (
     <article className="mx-auto max-w-3xl px-4 py-16">
       <h1 className="text-4xl font-bold text-slate-900">Terms of Service</h1>
-      <p className="mt-2 text-slate-500">Effective date: July 5, 2026</p>
+      <p className="mt-2 text-slate-500">Effective date: July 28, 2026</p>
 
       <div className="mt-8 space-y-8 text-slate-600">
         <section>
@@ -57,21 +57,28 @@ export default function TermsPage() {
           <h2 className="text-xl font-semibold text-slate-900">4. Content and copyright</h2>
           <p className="mt-3 leading-relaxed">
             Resources on eFundo may be uploaded by lecturers, students, or
-            administrators. We strive to ensure content is legitimate but do not
-            guarantee accuracy or ownership of all materials. If you believe
-            content infringes your rights, contact{' '}
-            <a
-              href="mailto:content@efundo.co.zw"
-              className="text-efundo-primary underline"
-            >
-              content@efundo.co.zw
-            </a>{' '}
-            with details for review and removal.
+            administrators. Uploaded materials are reviewed before publication.
+            We remove content that infringes copyright or academic integrity
+            policies when we become aware of a valid complaint.
           </p>
           <p className="mt-3 leading-relaxed">
-            By uploading content, you grant eFundo a non-exclusive licence to
-            host, display, and distribute that content on the platform for
-            educational purposes.
+            If you believe content on eFundo infringes your copyright or other
+            rights, email{' '}
+            <a
+              href="mailto:content@efundo.org"
+              className="text-efundo-primary underline"
+            >
+              content@efundo.org
+            </a>{' '}
+            with: (1) identification of the work, (2) the URL or resource title
+            on eFundo, (3) your contact details, and (4) a statement that you
+            are authorised to act for the rights holder. We aim to review
+            takedown requests within 7 business days.
+          </p>
+          <p className="mt-3 leading-relaxed">
+            By uploading content, you confirm you have the right to share it and
+            grant eFundo a non-exclusive licence to host, display, and
+            distribute that content on the platform for educational purposes.
           </p>
         </section>
 
@@ -129,10 +136,10 @@ export default function TermsPage() {
           <p className="mt-3 leading-relaxed">
             Questions about these Terms? Contact{' '}
             <a
-              href="mailto:support@efundo.co.zw"
+              href="mailto:support@efundo.org"
               className="text-efundo-primary underline"
             >
-              support@efundo.co.zw
+              support@efundo.org
             </a>{' '}
             or visit our{' '}
             <Link href="/contact" className="text-efundo-primary underline">
