@@ -16,9 +16,14 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       const configured = process.env.CORS_ORIGIN?.split(',').map((s) => s.trim()) ?? [
         'http://localhost:3000',
+        'https://efundo.org',
+        'https://www.efundo.org',
       ];
       // Flutter web / desktop tooling often uses a random localhost port.
       const isLocalDev =
@@ -28,9 +33,12 @@ async function bootstrap() {
         callback(null, true);
         return;
       }
-      callback(new Error(`CORS blocked for origin: ${origin}`), false);
+      // Reject without throwing — a thrown Error becomes a 500 under Nest/Express 5.
+      callback(null, false);
     },
     credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   const config = new DocumentBuilder()
