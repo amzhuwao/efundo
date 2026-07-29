@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getStudyGuides } from '@/lib/blog/posts';
+import { getStudyGuides } from '@/lib/blog';
 import { BlogCard } from '@/components/blog/BlogCard';
 
 export const metadata: Metadata = {
@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description:
     'Free study guides for Zimbabwean university students — exam preparation, past papers, revision strategies, and subject-specific tips.',
 };
+
+export const revalidate = 60;
 
 const guideTopics = [
   {
@@ -24,8 +26,8 @@ const guideTopics = [
   },
 ];
 
-export default function StudyGuidesPage() {
-  const guides = getStudyGuides();
+export default async function StudyGuidesPage() {
+  const guides = await getStudyGuides();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16">

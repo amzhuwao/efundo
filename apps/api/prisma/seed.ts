@@ -513,6 +513,47 @@ async function main() {
     console.log('Seeded assessment questions and quizzes for CS301');
   }
 
+  const blogPostsPath = path.join(__dirname, 'blog-posts.json');
+  if (fs.existsSync(blogPostsPath)) {
+    const blogPosts = JSON.parse(fs.readFileSync(blogPostsPath, 'utf8')) as Array<{
+      slug: string;
+      title: string;
+      excerpt: string;
+      category: string;
+      publishedAt: string;
+      readTimeMinutes: number;
+      author: string;
+      sections: unknown;
+    }>;
+    for (const post of blogPosts) {
+      await prisma.blogPost.upsert({
+        where: { slug: post.slug },
+        update: {
+          title: post.title,
+          excerpt: post.excerpt,
+          category: post.category,
+          author: post.author,
+          readTimeMinutes: post.readTimeMinutes,
+          publishedAt: new Date(post.publishedAt),
+          status: 'PUBLISHED',
+          sections: post.sections as object,
+        },
+        create: {
+          slug: post.slug,
+          title: post.title,
+          excerpt: post.excerpt,
+          category: post.category,
+          author: post.author,
+          readTimeMinutes: post.readTimeMinutes,
+          publishedAt: new Date(post.publishedAt),
+          status: 'PUBLISHED',
+          sections: post.sections as object,
+        },
+      });
+    }
+    console.log(`Seeded ${blogPosts.length} blog posts`);
+  }
+
   console.log('Seed complete.');
 }
 

@@ -646,3 +646,27 @@ model QuizCertificate {
   @@index([userId])
   @@map("quiz_certificates")
 }
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model BlogPost {
+  id              String         @id @default(cuid())
+  slug            String         @unique
+  title           String
+  excerpt         String         @db.Text
+  category        String
+  author          String         @default("eFundo Team")
+  readTimeMinutes Int            @default(5) @map("read_time_minutes")
+  publishedAt     DateTime       @map("published_at")
+  status          BlogPostStatus @default(DRAFT)
+  sections        Json
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@index([status, publishedAt])
+  @@index([category])
+  @@map("blog_posts")
+}

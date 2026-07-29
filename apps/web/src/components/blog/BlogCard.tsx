@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { BlogPost } from './posts';
+import type { BlogPost } from '@/lib/blog/posts';
 
 const categoryColors: Record<string, string> = {
   'Study Guide': 'bg-blue-100 text-blue-800',

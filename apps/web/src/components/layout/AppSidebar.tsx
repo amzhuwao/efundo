@@ -84,6 +84,12 @@ const NAV_SECTIONS: { title: string; items: AppNavItem[] }[] = [
         roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'MODERATOR'],
       },
       {
+        href: '/admin/blog',
+        label: 'Blog',
+        description: 'Articles & study guides',
+        roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'MODERATOR'],
+      },
+      {
         href: '/admin/users',
         label: 'Users',
         description: 'Roles & accounts',

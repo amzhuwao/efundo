@@ -11,6 +11,7 @@ import { ForumModule } from './forum/forum.module';
 import { LessonAiModule } from './lesson-ai/lesson-ai.module';
 import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
 import { AssessmentModule } from './assessment/assessment.module';
+import { BlogModule } from './blog/blog.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -27,6 +28,7 @@ import { HealthController } from './health.controller';
     LessonAiModule,
     AiAssistantModule,
     AssessmentModule,
+    BlogModule,
   ],
   controllers: [HealthController],
 })

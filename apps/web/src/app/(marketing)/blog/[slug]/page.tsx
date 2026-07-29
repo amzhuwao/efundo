@@ -1,20 +1,23 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getAllPosts, getPostBySlug } from '@/lib/blog/posts';
+import { getAllPosts, getPostBySlug } from '@/lib/blog';
 import { BlogPostContent } from '@/components/blog/BlogCard';
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
+export const revalidate = 60;
+
 export async function generateStaticParams() {
-  return getAllPosts().map((post) => ({ slug: post.slug }));
+  const posts = await getAllPosts();
+  return posts.map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlug(slug);
   if (!post) return { title: 'Article not found' };
 
   return {
@@ -32,10 +35,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlug(slug);
   if (!post) notFound();
 
-  const related = getAllPosts()
+  const related = (await getAllPosts())
     .filter((p) => p.slug !== slug && p.category === post.category)
     .slice(0, 3);
 
