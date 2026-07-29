@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getAllPosts, getPostBySlug } from '@/lib/blog';
 import { BlogPostContent } from '@/components/blog/BlogCard';
+import { BlogPageFrame } from '@/components/blog/BlogPageFrame';
+import { BlogSignupCta } from '@/components/blog/BlogSignupCta';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -43,7 +45,7 @@ export default async function BlogPostPage({ params }: Props) {
     .slice(0, 3);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16">
+    <BlogPageFrame narrow>
       <Link
         href="/blog"
         className="text-sm font-medium text-efundo-primary hover:underline"
@@ -55,20 +57,7 @@ export default async function BlogPostPage({ params }: Props) {
         <BlogPostContent post={post} />
       </div>
 
-      <div className="mt-12 rounded-2xl bg-blue-50 p-8 text-center">
-        <h2 className="text-xl font-bold text-slate-900">
-          Put these tips into practice
-        </h2>
-        <p className="mt-2 text-slate-600">
-          Access past papers, notes, and practice tests on eFundo.
-        </p>
-        <Link
-          href="/register"
-          className="mt-4 inline-block rounded-xl bg-efundo-primary px-6 py-2.5 font-semibold text-white hover:bg-efundo-primary-dark"
-        >
-          Create free account
-        </Link>
-      </div>
+      <BlogSignupCta />
 
       {related.length > 0 && (
         <aside className="mt-16 border-t pt-12">
@@ -87,6 +76,6 @@ export default async function BlogPostPage({ params }: Props) {
           </ul>
         </aside>
       )}
-    </div>
+    </BlogPageFrame>
   );
 }
