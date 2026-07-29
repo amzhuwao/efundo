@@ -75,6 +75,22 @@ ssh root@209.38.225.150 'find /var/mail/vhosts/efundo.org/support -type f | wc -
 
 Check outbound reputation: https://www.mail-tester.com (send from one of your mailboxes).
 
+## App SMTP (password reset)
+
+Configure on the API (`apps/api/.env` / production env):
+
+```bash
+SMTP_HOST=efundo.org
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=support@efundo.org
+SMTP_PASS='(from /root/efundo-mail-credentials.txt)'
+MAIL_FROM='eFundo <support@efundo.org>'
+WEB_URL=https://efundo.org
+```
+
+If SMTP vars are unset, reset links are logged by the API instead of emailed (useful for local dev).
+
 ## Notes
 
 - No webmail UI is installed (use Thunderbird, Apple Mail, Outlook, or Gmail “Check mail from other accounts”).

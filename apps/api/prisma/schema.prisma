@@ -63,6 +63,8 @@ model User {
   programId      String?         @map("program_id")
   year           Int?
   emailVerified  Boolean         @default(false) @map("email_verified")
+  passwordResetTokenHash String? @map("password_reset_token_hash")
+  passwordResetExpiresAt DateTime? @map("password_reset_expires_at")
   createdAt      DateTime        @default(now()) @map("created_at")
   updatedAt      DateTime        @updatedAt @map("updated_at")
 
@@ -85,6 +87,7 @@ model User {
 
   @@index([programId])
   @@index([educationLevel])
+  @@index([passwordResetTokenHash])
   @@map("users")
 }
 

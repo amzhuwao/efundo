@@ -1,17 +1,32 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { RegisterDto, LoginDto } from './dto/auth.dto';
+import { MailService } from '../mail/mail.service';
+import {
+  RegisterDto,
+  LoginDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/auth.dto';
 import { UserStatus } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly mail: MailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -74,6 +89,93 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const email = dto.email.toLowerCase();
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    // Always return the same message to avoid account enumeration.
+    const message =
+      'If an account exists for that email, we sent password reset instructions.';
+
+    if (!user || user.status === UserStatus.SUSPENDED) {
+      return { message };
+    }
+
+    const token = randomBytes(32).toString('hex');
+    const tokenHash = this.hashToken(token);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetTokenHash: tokenHash,
+        passwordResetExpiresAt: expiresAt,
+      },
+    });
+
+    const webUrl = (this.config.get<string>('WEB_URL') ?? 'http://localhost:3000').replace(
+      /\/$/,
+      '',
+    );
+    const resetUrl = `${webUrl}/reset-password?token=${token}`;
+
+    try {
+      await this.mail.sendPasswordReset(user.email, resetUrl);
+    } catch (err) {
+      this.logger.error(
+        `Failed to send password reset email to ${user.email}`,
+        err instanceof Error ? err.stack : undefined,
+      );
+      // Clear token so a failed send does not leave a usable reset pending silently.
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordResetTokenHash: null,
+          passwordResetExpiresAt: null,
+        },
+      });
+      throw new BadRequestException(
+        'Could not send reset email. Please try again later.',
+      );
+    }
+
+    return { message };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const tokenHash = this.hashToken(dto.token.trim());
+    const user = await this.prisma.user.findFirst({
+      where: {
+        passwordResetTokenHash: tokenHash,
+        passwordResetExpiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid or expired reset link');
+    }
+
+    if (user.status === UserStatus.SUSPENDED) {
+      throw new BadRequestException('Account suspended');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        passwordResetTokenHash: null,
+        passwordResetExpiresAt: null,
+      },
+    });
+
+    return { message: 'Password updated. You can sign in with your new password.' };
+  }
+
+  private hashToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
   }
 
   private async generateTokens(userId: string, email: string, role: string) {

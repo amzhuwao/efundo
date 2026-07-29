@@ -55,7 +55,7 @@ async function bootstrap() {
 
   // Browsers sometimes hit the API host for app routes (e.g. :3001/login).
   const http = app.getHttpAdapter().getInstance();
-  for (const path of ['/', '/login', '/register', '/dashboard', '/admin']) {
+  for (const path of ['/', '/login', '/register', '/forgot-password', '/reset-password', '/dashboard', '/admin']) {
     http.get(path, (_req: unknown, res: { redirect: (url: string) => void }) => {
       res.redirect(`${webUrl}${path === '/' ? '' : path}`);
     });
