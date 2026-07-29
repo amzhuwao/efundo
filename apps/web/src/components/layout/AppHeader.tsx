@@ -9,6 +9,7 @@ const QUICK_NAV = [
   { href: '/learn', label: 'Lessons' },
   { href: '/practice', label: 'Practice' },
   { href: '/library', label: 'Library' },
+  { href: '/blog', label: 'Blog' },
   { href: '/assistant', label: 'AI tutor' },
   { href: '/forum', label: 'Forum' },
 ];

@@ -28,6 +28,7 @@ const NAV_SECTIONS: { title: string; items: AppNavItem[] }[] = [
       { href: '/learn', label: 'Lessons', description: 'Courses & modules' },
       { href: '/practice', label: 'Practice tests', description: 'Quizzes & mock exams' },
       { href: '/library', label: 'Library', description: 'Past papers & notes' },
+      { href: '/blog', label: 'Blog', description: 'Study guides & tips' },
       { href: '/assistant', label: 'AI tutor', description: 'Ask & upload assignments' },
       { href: '/forum', label: 'Forum', description: 'Discussions & Q&A' },
       { href: '/library/bookmarks', label: 'Bookmarks', description: 'Saved resources' },
@@ -85,8 +86,8 @@ const NAV_SECTIONS: { title: string; items: AppNavItem[] }[] = [
       },
       {
         href: '/admin/blog',
-        label: 'Blog',
-        description: 'Articles & study guides',
+        label: 'Manage blog',
+        description: 'Write & publish articles',
         roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'MODERATOR'],
       },
       {
