@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "nest build",
-    "dev": "nest start --watch",
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json && concurrently -k -n tsc,node -c cyan,magenta \"tsc -p tsconfig.json --watch --preserveWatchOutput\" \"node --watch dist/main.js\"",
     "start": "node dist/main",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -45,6 +45,7 @@
     "@types/node": "^22.10.7",
     "@types/passport-jwt": "^4.0.1",
     "@types/pdf-parse": "^1.1.5",
+    "concurrently": "^9.2.4",
     "prisma": "^6.3.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
