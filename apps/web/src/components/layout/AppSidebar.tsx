@@ -17,7 +17,10 @@ export interface AppNavItem {
 const NAV_SECTIONS: { title: string; items: AppNavItem[] }[] = [
   {
     title: 'Home',
-    items: [{ href: '/dashboard', label: 'Dashboard', exact: true, adminHref: '/admin' }],
+    items: [
+      { href: '/dashboard', label: 'Dashboard', exact: true, adminHref: '/admin' },
+      { href: '/profile', label: 'Profile', description: 'Account & preferences' },
+    ],
   },
   {
     title: 'Learn',
@@ -188,13 +191,21 @@ export function AppSidebar({
       </nav>
 
       <div className="border-t border-white/10 p-4">
-        <div className="rounded-lg bg-white/5 px-3 py-3">
+        <Link
+          href="/profile"
+          onClick={onNavigate}
+          className={`block rounded-lg px-3 py-3 transition ${
+            isActive(pathname, '/profile')
+              ? 'bg-white/10'
+              : 'bg-white/5 hover:bg-white/10'
+          }`}
+        >
           <p className="truncate text-sm font-medium">{user.fullName}</p>
           <p className="truncate text-xs text-slate-400">{user.email}</p>
           <p className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">
             {user.role.replace(/_/g, ' ')}
           </p>
-        </div>
+        </Link>
         <button
           type="button"
           onClick={() => {

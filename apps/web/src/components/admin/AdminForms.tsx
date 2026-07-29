@@ -38,6 +38,21 @@ export function useAdminGuard() {
   return user;
 }
 
+/** SUPER_ADMIN / INSTITUTION_ADMIN only (matches /users API). */
+export function useUsersAdminGuard() {
+  const router = useRouter();
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (!user) router.replace('/login');
+    else if (!['SUPER_ADMIN', 'INSTITUTION_ADMIN'].includes(user.role)) {
+      router.replace(getHomeHref(user.role));
+    }
+  }, [user, router]);
+
+  return user;
+}
+
 export function slugify(text: string) {
   return text
     .toLowerCase()

@@ -75,10 +75,17 @@ export function AppHeader({ onMenuOpen }: { onMenuOpen?: () => void }) {
         </nav>
 
         <div className="ml-auto flex items-center gap-3">
-          <div className="hidden text-right sm:block">
+          <Link
+            href="/profile"
+            className={`hidden text-right sm:block rounded-lg px-2 py-1 transition ${
+              isActive(pathname, '/profile')
+                ? 'bg-efundo-primary/10'
+                : 'hover:bg-slate-50'
+            }`}
+          >
             <p className="text-sm font-medium text-slate-900">{user.fullName}</p>
             <p className="text-xs text-slate-500">{user.role.replace(/_/g, ' ')}</p>
-          </div>
+          </Link>
           <button
             type="button"
             onClick={() => {
