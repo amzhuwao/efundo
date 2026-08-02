@@ -135,6 +135,15 @@ Run both servers with `npm run dev`. If you only started the API (`npm run dev:a
 
 After the latest API update, hitting `/login` on port 3001 redirects to the web app automatically.
 
+### Local PDF ingest (admin)
+
+1. Ensure `GEMINI_API_KEY` is set in `apps/api/.env`
+2. Run `npm run dev` and sign in as an admin/lecturer
+3. Open http://localhost:3000/admin/ingest (Chrome or Edge)
+4. Choose a folder of PDFs → review AI classifications → upload selected
+
+Uploads go through create → file upload → submit for moderation. Super/institution admins can enable auto-publish.
+
 ## Scripts
 
 ```bash

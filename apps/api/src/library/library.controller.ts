@@ -72,6 +72,24 @@ export class LibraryController {
     return this.libraryService.findById(id, req.user?.id);
   }
 
+  @Post('ingest/classify')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Classify a local PDF for library ingest (Gemini)' })
+  @UseInterceptors(FileInterceptor('file'))
+  classifyIngest(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [new MaxFileSizeValidator({ maxSize: 50 * 1024 * 1024 })],
+      }),
+    )
+    file: Express.Multer.File,
+    @Request() req: { user: { role: UserRole } },
+  ) {
+    return this.libraryService.classifyIngestPdf(file, req.user.role);
+  }
+
   @Post('resources')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

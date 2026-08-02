@@ -4,10 +4,17 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { Prisma, ResourceStatus, UserRole, EducationLevel } from '@prisma/client';
+import {
+  Prisma,
+  ResourceStatus,
+  ResourceType,
+  UserRole,
+  EducationLevel,
+} from '@prisma/client';
 import { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { GeminiService } from '../ai/gemini.service';
 import {
   CreateResourceDto,
   UpdateResourceDto,
@@ -15,6 +22,26 @@ import {
   CreateReviewDto,
   SearchResourcesDto,
 } from './dto/library.dto';
+
+const INGEST_RESOURCE_TYPES = Object.values(ResourceType);
+const INGEST_LEVELS = Object.values(EducationLevel);
+
+export type IngestClassification = {
+  type: ResourceType;
+  title: string;
+  description?: string | null;
+  author?: string | null;
+  year?: number | null;
+  semester?: number | null;
+  suggestedSubjectCode?: string | null;
+  suggestedSubjectName?: string | null;
+  educationLevel?: EducationLevel | null;
+  tags: string[];
+  confidence: number;
+  rationale?: string | null;
+  textPreview: string;
+  fileName: string;
+};
 
 function slugify(text: string): string {
   return text
@@ -29,6 +56,7 @@ export class LibraryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly gemini: GeminiService,
   ) {}
 
   private resourceInclude = {
@@ -491,6 +519,142 @@ export class LibraryService {
       publishedAt: resource.publishedAt?.toISOString() ?? null,
       createdAt: resource.createdAt.toISOString(),
       updatedAt: resource.updatedAt.toISOString(),
+    };
+  }
+
+  async classifyIngestPdf(
+    file: Express.Multer.File,
+    role: UserRole,
+  ): Promise<IngestClassification> {
+    if (!this.canUpload(role)) {
+      throw new ForbiddenException('You do not have permission to ingest resources');
+    }
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('PDF file is required');
+    }
+    const mime = file.mimetype || '';
+    const name = file.originalname || 'document.pdf';
+    if (mime !== 'application/pdf' && !name.toLowerCase().endsWith('.pdf')) {
+      throw new BadRequestException('Only PDF files are supported for ingest');
+    }
+
+    this.gemini.ensureConfigured();
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pdfParse = require('pdf-parse') as (
+      data: Buffer,
+    ) => Promise<{ text: string }>;
+    const parsed = await pdfParse(file.buffer);
+    const fullText = parsed.text?.trim() ?? '';
+    if (!fullText) {
+      throw new BadRequestException(
+        'No text could be extracted from this PDF. Scanned image-only PDFs are not supported yet.',
+      );
+    }
+
+    const maxChars = Number(process.env.AI_MAX_SOURCE_CHARS ?? 120_000);
+    const excerpt = fullText.slice(0, Math.min(maxChars, 40_000));
+
+    const systemPrompt = `You classify Zimbabwean education PDFs for the eFundo digital library.
+Return ONLY valid JSON matching this schema:
+{
+  "type": one of ${INGEST_RESOURCE_TYPES.join(', ')},
+  "title": string (clean human title, not the raw filename),
+  "description": string | null,
+  "author": string | null (institution, lecturer, or publisher if clear),
+  "year": number | null (exam year or publication year),
+  "semester": number | null (1 or 2 if tertiary),
+  "suggestedSubjectCode": string | null (e.g. CS301, 4004),
+  "suggestedSubjectName": string | null,
+  "educationLevel": one of ${INGEST_LEVELS.join(', ')} | null,
+  "tags": string[],
+  "confidence": number between 0 and 1,
+  "rationale": string (one short sentence)
+}
+Rules:
+- PAST_PAPER: past exam / midterm / final papers, usually with questions and marks
+- TEXTBOOK: long-form published book chapters or full books
+- LECTURE_NOTE: course notes, handouts, slides-as-PDF notes
+- Prefer TERTIARY for university codes like CS301; O_LEVEL/A_LEVEL for ZIMSEC-style papers
+- If unsure between types, pick the closest and lower confidence`;
+
+    const userPrompt = `File name: ${name}
+
+PDF text (excerpt):
+---
+${excerpt}
+---`;
+
+    const raw = await this.gemini.generateJson(systemPrompt, userPrompt);
+    let data: Record<string, unknown>;
+    try {
+      data = JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      throw new BadRequestException('AI returned invalid JSON for classification');
+    }
+
+    const typeRaw = String(data.type ?? 'LECTURE_NOTE');
+    const type = INGEST_RESOURCE_TYPES.includes(typeRaw as ResourceType)
+      ? (typeRaw as ResourceType)
+      : ResourceType.LECTURE_NOTE;
+
+    const levelRaw = data.educationLevel != null ? String(data.educationLevel) : null;
+    const educationLevel =
+      levelRaw && INGEST_LEVELS.includes(levelRaw as EducationLevel)
+        ? (levelRaw as EducationLevel)
+        : null;
+
+    const title =
+      typeof data.title === 'string' && data.title.trim().length >= 3
+        ? data.title.trim().slice(0, 200)
+        : name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ').trim() ||
+          'Untitled resource';
+
+    const confidenceNum = Number(data.confidence);
+    const confidence = Number.isFinite(confidenceNum)
+      ? Math.min(1, Math.max(0, confidenceNum))
+      : 0.5;
+
+    const yearNum = data.year != null ? Number(data.year) : null;
+    const semesterNum = data.semester != null ? Number(data.semester) : null;
+    const tags = Array.isArray(data.tags)
+      ? data.tags.map((t) => String(t).trim()).filter(Boolean).slice(0, 12)
+      : [];
+
+    return {
+      type,
+      title,
+      description:
+        typeof data.description === 'string'
+          ? data.description.trim().slice(0, 2000)
+          : null,
+      author:
+        typeof data.author === 'string' ? data.author.trim().slice(0, 200) : null,
+      year:
+        yearNum != null &&
+        Number.isFinite(yearNum) &&
+        yearNum >= 1990 &&
+        yearNum <= 2100
+          ? Math.round(yearNum)
+          : null,
+      semester: semesterNum === 1 || semesterNum === 2 ? semesterNum : null,
+      suggestedSubjectCode:
+        typeof data.suggestedSubjectCode === 'string'
+          ? data.suggestedSubjectCode.trim().slice(0, 40)
+          : null,
+      suggestedSubjectName:
+        typeof data.suggestedSubjectName === 'string'
+          ? data.suggestedSubjectName.trim().slice(0, 120)
+          : null,
+      educationLevel,
+      tags,
+      confidence,
+      rationale:
+        typeof data.rationale === 'string'
+          ? data.rationale.trim().slice(0, 500)
+          : null,
+      textPreview: fullText.slice(0, 600),
+      fileName: name,
     };
   }
 }

@@ -124,3 +124,41 @@ export async function submitResource(id: string, token: string) {
     token,
   );
 }
+
+export type IngestClassification = {
+  type: string;
+  title: string;
+  description?: string | null;
+  author?: string | null;
+  year?: number | null;
+  semester?: number | null;
+  suggestedSubjectCode?: string | null;
+  suggestedSubjectName?: string | null;
+  educationLevel?: string | null;
+  tags: string[];
+  confidence: number;
+  rationale?: string | null;
+  textPreview: string;
+  fileName: string;
+};
+
+export async function classifyIngestPdf(file: File, token: string) {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_URL}/library/ingest/classify`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const message =
+      typeof body.message === 'string'
+        ? body.message
+        : Array.isArray(body.message)
+          ? body.message.join(', ')
+          : 'Classification failed';
+    throw new Error(message);
+  }
+  return body as IngestClassification;
+}

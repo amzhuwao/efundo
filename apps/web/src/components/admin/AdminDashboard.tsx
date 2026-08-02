@@ -17,6 +17,12 @@ const QUICK_ACTIONS = [
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LECTURER'],
   },
   {
+    title: 'PDF ingest',
+    desc: 'Classify a local folder of PDFs and upload to the library',
+    href: '/admin/ingest',
+    roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LECTURER', 'MODERATOR'],
+  },
+  {
     title: 'Assessment authoring',
     desc: 'Question bank, practice quizzes, mock exams',
     href: '/admin/assessment',

@@ -67,6 +67,12 @@ const NAV_SECTIONS: { title: string; items: AppNavItem[] }[] = [
         roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LECTURER'],
       },
       {
+        href: '/admin/ingest',
+        label: 'PDF ingest',
+        description: 'Classify & upload local PDFs',
+        roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LECTURER', 'MODERATOR'],
+      },
+      {
         href: '/admin/curriculum',
         label: 'Programs',
         description: 'Grades, forms & courses',
