@@ -101,6 +101,35 @@ export class GeminiService {
     }
   }
 
+  /** JSON generation with multimodal parts (e.g. scanned PDF + prompt). */
+  async generateJsonMultimodal(
+    systemPrompt: string,
+    parts: Part[],
+  ): Promise<string> {
+    this.ensureConfigured();
+
+    const model = this.client!.getGenerativeModel({
+      model: this.modelName,
+      systemInstruction: systemPrompt,
+      generationConfig: {
+        temperature: 0.3,
+        responseMimeType: 'application/json',
+        maxOutputTokens: 2000,
+      },
+    });
+
+    try {
+      const result = await model.generateContent(parts);
+      const text = result.response.text()?.trim();
+      if (!text) {
+        throw new Error('Gemini returned an empty response');
+      }
+      return text;
+    } catch (err) {
+      mapGeminiError(err);
+    }
+  }
+
   async describeMultimodal(
     parts: Part[],
     options?: { maxOutputTokens?: number },

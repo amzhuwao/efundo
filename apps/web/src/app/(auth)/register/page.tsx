@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
 import type { AuthResponse } from '@efundo/shared-types';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -38,9 +39,7 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-2xl border bg-white p-8 shadow-sm">
-        <Link href="/" className="text-2xl font-bold text-efundo-primary">
-          eFundo
-        </Link>
+        <BrandLogo href="/" size="lg" priority />
         <h1 className="mt-6 text-2xl font-semibold">Create your account</h1>
         <p className="mt-1 text-sm text-slate-600">
           Join thousands of students learning smarter

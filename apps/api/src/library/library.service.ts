@@ -544,16 +544,13 @@ export class LibraryService {
     const pdfParse = require('pdf-parse') as (
       data: Buffer,
     ) => Promise<{ text: string }>;
-    const parsed = await pdfParse(file.buffer);
-    const fullText = parsed.text?.trim() ?? '';
-    if (!fullText) {
-      throw new BadRequestException(
-        'No text could be extracted from this PDF. Scanned image-only PDFs are not supported yet.',
-      );
+    let fullText = '';
+    try {
+      const parsed = await pdfParse(file.buffer);
+      fullText = parsed.text?.trim() ?? '';
+    } catch {
+      fullText = '';
     }
-
-    const maxChars = Number(process.env.AI_MAX_SOURCE_CHARS ?? 120_000);
-    const excerpt = fullText.slice(0, Math.min(maxChars, 40_000));
 
     const systemPrompt = `You classify Zimbabwean education PDFs for the eFundo digital library.
 Return ONLY valid JSON matching this schema:
@@ -576,16 +573,52 @@ Rules:
 - TEXTBOOK: long-form published book chapters or full books
 - LECTURE_NOTE: course notes, handouts, slides-as-PDF notes
 - Prefer TERTIARY for university codes like CS301; O_LEVEL/A_LEVEL for ZIMSEC-style papers
-- If unsure between types, pick the closest and lower confidence`;
+- If unsure between types, pick the closest and lower confidence
+- Read cover pages, headers, and question numbers carefully when the PDF is a scan`;
 
-    const userPrompt = `File name: ${name}
+    const minTextChars = 80;
+    let raw: string;
+    let textPreview: string;
+
+    if (fullText.length >= minTextChars) {
+      const maxChars = Number(process.env.AI_MAX_SOURCE_CHARS ?? 120_000);
+      const excerpt = fullText.slice(0, Math.min(maxChars, 40_000));
+      textPreview = fullText.slice(0, 600);
+      raw = await this.gemini.generateJson(
+        systemPrompt,
+        `File name: ${name}
 
 PDF text (excerpt):
 ---
 ${excerpt}
----`;
+---`,
+      );
+    } else {
+      // Scanned / image-only PDF — send the file to Gemini for visual OCR + classify
+      const maxInlineMb = Number(
+        process.env.GEMINI_MAX_INLINE_MB ?? 20,
+      );
+      if (file.buffer.length > maxInlineMb * 1024 * 1024) {
+        throw new BadRequestException(
+          `This scanned PDF is too large for AI classification (max ~${maxInlineMb}MB). Split it or use a text-based PDF.`,
+        );
+      }
+      textPreview =
+        '(Scanned PDF — classified from page images; no extractable text layer.)';
+      raw = await this.gemini.generateJsonMultimodal(systemPrompt, [
+        {
+          inlineData: {
+            mimeType: 'application/pdf',
+            data: file.buffer.toString('base64'),
+          },
+        },
+        {
+          text: `File name: ${name}
 
-    const raw = await this.gemini.generateJson(systemPrompt, userPrompt);
+This PDF has little or no extractable text (likely a scan). Visually read the first pages (title page, headers, questions) and classify it for the library.`,
+        },
+      ]);
+    }
     let data: Record<string, unknown>;
     try {
       data = JSON.parse(raw) as Record<string, unknown>;
@@ -653,7 +686,7 @@ ${excerpt}
         typeof data.rationale === 'string'
           ? data.rationale.trim().slice(0, 500)
           : null,
-      textPreview: fullText.slice(0, 600),
+      textPreview,
       fileName: name,
     };
   }

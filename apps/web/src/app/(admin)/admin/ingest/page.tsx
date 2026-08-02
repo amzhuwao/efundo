@@ -177,7 +177,13 @@ export default function AdminIngestPage() {
   }
 
   async function handleFilesSelected(fileList: FileList | null) {
-    if (!fileList || !token) return;
+    if (!fileList) return;
+    const liveToken = useAuthStore.getState().accessToken() ?? token;
+    if (!liveToken) {
+      setError('You are not signed in. Log in again, then retry.');
+      router.replace('/login');
+      return;
+    }
     setError('');
     setSuccess('');
 
@@ -222,7 +228,7 @@ export default function AdminIngestPage() {
         ),
       );
       try {
-        const classification = await classifyIngestPdf(file, token);
+        const classification = await classifyIngestPdf(file, liveToken);
         classified++;
         setRows((prev) =>
           prev.map((r) =>
@@ -233,10 +239,14 @@ export default function AdminIngestPage() {
         );
       } catch (e) {
         const message = e instanceof Error ? e.message : 'Classification failed';
+        const friendly =
+          message === 'Unauthorized' || /unauthorized/i.test(message)
+            ? 'Session expired — log out and log back in, then retry.'
+            : message;
         setRows((prev) =>
           prev.map((r) =>
             r.file === file
-              ? { ...r, status: 'error' as RowStatus, error: message, selected: false }
+              ? { ...r, status: 'error' as RowStatus, error: friendly, selected: false }
               : r,
           ),
         );
@@ -251,7 +261,12 @@ export default function AdminIngestPage() {
   }
 
   async function handleUpload() {
-    if (!token) return;
+    const liveToken = useAuthStore.getState().accessToken() ?? token;
+    if (!liveToken) {
+      setError('You are not signed in. Log in again, then retry.');
+      router.replace('/login');
+      return;
+    }
     const toUpload = rows.filter((r) => r.selected && r.status === 'ready');
     if (toUpload.length === 0) {
       setError('Select at least one classified resource to upload.');
@@ -282,12 +297,12 @@ export default function AdminIngestPage() {
               .map((t) => t.trim())
               .filter(Boolean),
           },
-          token,
+          liveToken,
         );
-        await uploadResourceFile(resource.id, row.file, token);
-        await submitResource(resource.id, token);
+        await uploadResourceFile(resource.id, row.file, liveToken);
+        await submitResource(resource.id, liveToken);
         if (autoPublish && canPublish) {
-          await moderateResource(resource.id, 'publish', token);
+          await moderateResource(resource.id, 'publish', liveToken);
         }
         done++;
         updateRow(row.id, {

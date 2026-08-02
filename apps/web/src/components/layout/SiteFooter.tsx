@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 const footerLinks = {
   Platform: [
@@ -24,9 +25,7 @@ export function SiteFooter() {
     <footer className="border-t bg-slate-900 text-slate-300">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 md:grid-cols-4">
         <div className="md:col-span-1">
-          <Link href="/" className="text-xl font-bold text-white">
-            eFundo
-          </Link>
+          <BrandLogo href="/" size="md" className="brightness-110" />
           <p className="mt-3 text-sm leading-relaxed text-slate-400">
             Free and premium learning resources for university and college
             students across Zimbabwe.

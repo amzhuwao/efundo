@@ -26,6 +26,10 @@ export const metadata: Metadata = {
     'eFundo',
   ],
   authors: [{ name: 'eFundo' }],
+  icons: {
+    icon: [{ url: '/brand/icon.png', type: 'image/png' }],
+    apple: [{ url: '/brand/icon.png' }],
+  },
   alternates: {
     canonical: '/',
   },
@@ -37,12 +41,14 @@ export const metadata: Metadata = {
     title: 'eFundo — Learn Smarter',
     description:
       'Past papers, notes, lessons, and practice tests for university students in Zimbabwe.',
+    images: [{ url: '/brand/logo.png', width: 832, height: 300, alt: 'eFundo' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'eFundo — Learn Smarter',
     description:
       'Past papers, notes, lessons, and practice tests for university students in Zimbabwe.',
+    images: ['/brand/logo.png'],
   },
   robots: {
     index: true,

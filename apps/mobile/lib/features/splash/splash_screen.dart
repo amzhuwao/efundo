@@ -154,7 +154,7 @@ class _FallbackLogo extends StatelessWidget {
         ),
         children: [
           TextSpan(text: 'e', style: TextStyle(color: AppColors.accent)),
-          TextSpan(text: 'fundo', style: TextStyle(color: AppColors.primary)),
+          TextSpan(text: 'fundo', style: TextStyle(color: AppColors.logoBlue)),
         ],
       ),
     );

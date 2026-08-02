@@ -48,14 +48,16 @@ const faqs = [
 export default function HomePage() {
   return (
     <>
-      <section className="bg-gradient-to-b from-blue-50 to-slate-50 px-4 py-20">
+      <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50 px-4 py-20">
         <div className="mx-auto max-w-6xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-efundo-primary">
             Built for Zimbabwean students
           </p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
             Your study resources,{' '}
-            <span className="text-efundo-primary">all in one place</span>
+            <span className="bg-gradient-to-r from-efundo-primary to-efundo-purple bg-clip-text text-transparent">
+              all in one place
+            </span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-600">
             Access past exam papers, lecture notes, textbooks, interactive lessons,
@@ -215,10 +217,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="border-t bg-efundo-primary py-16 text-white">
+      <section className="border-t bg-gradient-to-r from-efundo-primary to-efundo-purple py-16 text-white">
         <div className="mx-auto max-w-6xl px-4 text-center">
           <h2 className="text-3xl font-bold">Ready to study smarter?</h2>
-          <p className="mx-auto mt-4 max-w-xl text-blue-100">
+          <p className="mx-auto mt-4 max-w-xl text-indigo-100">
             Join eFundo today and get access to resources built for your course
             and institution.
           </p>

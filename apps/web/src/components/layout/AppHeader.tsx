@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
 import { getHomeHref, isAdminRole } from '@/lib/roles';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 const QUICK_NAV = [
   { href: '/learn', label: 'Lessons' },
@@ -27,7 +28,7 @@ export function AppHeader({ onMenuOpen }: { onMenuOpen?: () => void }) {
   const homeHref = getHomeHref(user.role);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/92 backdrop-blur-md">
       <div className="flex h-14 items-center gap-4 px-4 md:px-6">
         <button
           type="button"
@@ -45,9 +46,7 @@ export function AppHeader({ onMenuOpen }: { onMenuOpen?: () => void }) {
           </svg>
         </button>
 
-        <Link href={homeHref} className="shrink-0 text-lg font-bold text-efundo-primary">
-          eFundo
-        </Link>
+        <BrandLogo href={homeHref} size="sm" />
 
         <nav className="hidden items-center gap-1 md:flex">
           <Link

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 const navLinks = [
   { href: '/study-guides', label: 'Study guides' },
@@ -10,17 +11,15 @@ const navLinks = [
 
 export function SiteHeader() {
   return (
-    <header className="border-b bg-white">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-        <Link href="/" className="text-2xl font-bold text-efundo-primary">
-          eFundo
-        </Link>
+    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/92 backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+        <BrandLogo href="/" size="lg" priority />
         <nav className="hidden items-center gap-6 md:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-slate-600 hover:text-efundo-primary"
+              className="text-sm font-semibold text-slate-600 hover:text-efundo-primary"
             >
               {link.label}
             </Link>

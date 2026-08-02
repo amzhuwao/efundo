@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
 import { getHomeHref, isAdminRole } from '@/lib/roles';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 export interface AppNavItem {
   href: string;
@@ -163,14 +164,10 @@ export function AppSidebar({
       className={`flex h-full w-64 flex-col bg-slate-900 text-white ${className}`}
     >
       <div className="border-b border-white/10 px-5 py-5">
-        <Link
-          href={homeHref}
-          onClick={onNavigate}
-          className="text-lg font-bold tracking-tight text-white"
-        >
-          eFundo
-        </Link>
-        <p className="mt-1 text-xs font-medium uppercase tracking-wider text-slate-400">
+        <div onClick={onNavigate}>
+          <BrandLogo href={homeHref} size="md" className="brightness-110" />
+        </div>
+        <p className="mt-2 text-xs font-medium uppercase tracking-wider text-slate-400">
           {isAdminRole(user.role) ? 'Admin' : 'Learning platform'}
         </p>
       </div>

@@ -23,9 +23,19 @@ class ApiConfig {
 class AppColors {
   AppColors._();
 
-  /// Brand blue from eFundo logo ("fundo")
-  static const primary = Color(0xFF1D22D3);
-  static const primaryDark = Color(0xFF1518A8);
-  /// Brand red from eFundo logo ("e")
+  /// EfundoConnect UI blue (#1e40af)
+  static const primary = Color(0xFF1E40AF);
+  static const primaryDark = Color(0xFF1E3A8A);
+
+  /// EfundoConnect purple (#7c3aed)
+  static const purple = Color(0xFF7C3AED);
+
+  /// Accent / link blue from Connect (#1863dc)
+  static const accentBlue = Color(0xFF1863DC);
+
+  /// Logo red ("e" in wordmark)
   static const accent = Color(0xFFE31E24);
+
+  /// Logo bright blue ("fundo")
+  static const logoBlue = Color(0xFF1D22D3);
 }

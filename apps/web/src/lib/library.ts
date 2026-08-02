@@ -1,4 +1,4 @@
-import { api, API_URL } from './api';
+import { api, authFetch } from './api';
 import type { PaginatedResponse, ResourceSummary } from '@efundo/shared-types';
 
 export const RESOURCE_TYPES = [
@@ -107,13 +107,21 @@ export async function uploadResourceFile(
 ) {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(`${API_URL}/library/resources/${id}/upload`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body: form,
-  });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.message ?? 'Upload failed');
+  const res = await authFetch(
+    `/library/resources/${id}/upload`,
+    { method: 'POST', body: form },
+    token,
+  );
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const message =
+      typeof body.message === 'string'
+        ? body.message
+        : Array.isArray(body.message)
+          ? body.message.join(', ')
+          : 'Upload failed';
+    throw new Error(message);
+  }
   return body as ResourceSummary;
 }
 
@@ -145,11 +153,11 @@ export type IngestClassification = {
 export async function classifyIngestPdf(file: File, token: string) {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(`${API_URL}/library/ingest/classify`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body: form,
-  });
+  const res = await authFetch(
+    '/library/ingest/classify',
+    { method: 'POST', body: form },
+    token,
+  );
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     const message =

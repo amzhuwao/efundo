@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/auth-store';
 import { getCertificate } from '@/lib/assessment';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 export default function CertificateDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -61,9 +62,9 @@ export default function CertificateDetailPage() {
 
       <div className="certificate-print rounded-2xl border-4 border-double border-efundo-primary/30 bg-white p-10 shadow-lg">
         <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-efundo-primary">
-            eFundo
-          </p>
+          <div className="flex justify-center">
+            <BrandLogo href={null} size="lg" />
+          </div>
           <h1 className="mt-4 font-serif text-3xl font-bold text-slate-900">
             Certificate of Achievement
           </h1>
