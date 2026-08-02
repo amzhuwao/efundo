@@ -56,6 +56,7 @@ type IngestRow = {
   rationale: string;
   textPreview: string;
   uploadedId?: string;
+  expanded: boolean;
 };
 
 function matchSubject(
@@ -120,7 +121,7 @@ function applyClassification(file: File, c: IngestClassification, programs: Prog
   return {
     id: `${file.name}-${file.size}-${file.lastModified}`,
     file,
-    selected: true,
+    selected: false, // opt-in: admin chooses what to finalize
     status: 'ready',
     type: c.type || 'LECTURE_NOTE',
     title: c.title,
@@ -135,7 +136,16 @@ function applyClassification(file: File, c: IngestClassification, programs: Prog
     confidence: c.confidence,
     rationale: c.rationale ?? '',
     textPreview: c.textPreview,
+    expanded: true,
   };
+}
+
+function rowValidationError(row: IngestRow): string | null {
+  if (row.title.trim().length < 3) {
+    return 'Title must be at least 3 characters.';
+  }
+  if (!row.type) return 'Type is required.';
+  return null;
 }
 
 export default function AdminIngestPage() {
@@ -167,13 +177,28 @@ export default function AdminIngestPage() {
 
   const canPublish = user?.role === 'SUPER_ADMIN' || user?.role === 'INSTITUTION_ADMIN';
 
-  const selectedCount = useMemo(
-    () => rows.filter((r) => r.selected && r.status === 'ready').length,
+  const readyRows = useMemo(
+    () => rows.filter((r) => r.status === 'ready'),
     [rows],
   );
+  const selectedReady = useMemo(
+    () => readyRows.filter((r) => r.selected),
+    [readyRows],
+  );
+  const selectedCount = selectedReady.length;
+  const allReadySelected =
+    readyRows.length > 0 && readyRows.every((r) => r.selected);
 
   function updateRow(id: string, patch: Partial<IngestRow>) {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  }
+
+  function setSelectedForReady(selected: boolean) {
+    setRows((prev) =>
+      prev.map((r) =>
+        r.status === 'ready' ? { ...r, selected, expanded: selected || r.expanded } : r,
+      ),
+    );
   }
 
   async function handleFilesSelected(fileList: FileList | null) {
@@ -199,7 +224,7 @@ export default function AdminIngestPage() {
     const placeholders: IngestRow[] = pdfs.map((file) => ({
       id: `${file.name}-${file.size}-${file.lastModified}`,
       file,
-      selected: true,
+      selected: false,
       status: 'pending',
       type: 'LECTURE_NOTE',
       title: file.name.replace(/\.pdf$/i, ''),
@@ -214,6 +239,7 @@ export default function AdminIngestPage() {
       confidence: 0,
       rationale: '',
       textPreview: '',
+      expanded: false,
     }));
     setRows(placeholders);
     setClassifying(true);
@@ -246,7 +272,13 @@ export default function AdminIngestPage() {
         setRows((prev) =>
           prev.map((r) =>
             r.file === file
-              ? { ...r, status: 'error' as RowStatus, error: friendly, selected: false }
+              ? {
+                  ...r,
+                  status: 'error' as RowStatus,
+                  error: friendly,
+                  selected: false,
+                  expanded: false,
+                }
               : r,
           ),
         );
@@ -256,11 +288,11 @@ export default function AdminIngestPage() {
     setClassifying(false);
     setProgress('');
     setSuccess(
-      `Classified ${classified} of ${pdfs.length} PDF${pdfs.length === 1 ? '' : 's'}. Review and upload.`,
+      `Classified ${classified} of ${pdfs.length} PDF${pdfs.length === 1 ? '' : 's'}. Edit details, select files, then finalize upload.`,
     );
   }
 
-  async function handleUpload() {
+  async function handleFinalize() {
     const liveToken = useAuthStore.getState().accessToken() ?? token;
     if (!liveToken) {
       setError('You are not signed in. Log in again, then retry.');
@@ -269,7 +301,28 @@ export default function AdminIngestPage() {
     }
     const toUpload = rows.filter((r) => r.selected && r.status === 'ready');
     if (toUpload.length === 0) {
-      setError('Select at least one classified resource to upload.');
+      setError('Select at least one classified file to finalize.');
+      return;
+    }
+
+    const invalid = toUpload
+      .map((r) => ({ row: r, error: rowValidationError(r) }))
+      .filter((x) => x.error);
+    if (invalid.length > 0) {
+      setError(
+        `Fix details before finalize: ${invalid
+          .slice(0, 3)
+          .map((x) => `${x.row.file.name} (${x.error})`)
+          .join('; ')}${invalid.length > 3 ? '…' : ''}`,
+      );
+      setRows((prev) =>
+        prev.map((r) => {
+          const hit = invalid.find((x) => x.row.id === r.id);
+          return hit
+            ? { ...r, error: hit.error ?? undefined, expanded: true }
+            : r;
+        }),
+      );
       return;
     }
 
@@ -280,7 +333,7 @@ export default function AdminIngestPage() {
 
     for (const row of toUpload) {
       updateRow(row.id, { status: 'uploading', error: undefined });
-      setProgress(`Uploading ${done + 1} of ${toUpload.length}: ${row.title}`);
+      setProgress(`Finalizing ${done + 1} of ${toUpload.length}: ${row.title}`);
       try {
         const resource = await createResource(
           {
@@ -290,6 +343,7 @@ export default function AdminIngestPage() {
             author: row.author.trim() || undefined,
             year: row.year ? Number(row.year) : undefined,
             semester: row.semester ? Number(row.semester) : undefined,
+            educationLevel: row.educationLevel || undefined,
             programId: row.programId || undefined,
             subjectId: row.subjectId || undefined,
             tags: row.tags
@@ -309,11 +363,13 @@ export default function AdminIngestPage() {
           status: 'done',
           selected: false,
           uploadedId: resource.id,
+          expanded: false,
         });
       } catch (e) {
         updateRow(row.id, {
           status: 'ready',
           error: e instanceof Error ? e.message : 'Upload failed',
+          expanded: true,
         });
       }
     }
@@ -321,7 +377,7 @@ export default function AdminIngestPage() {
     setUploading(false);
     setProgress('');
     setSuccess(
-      `Uploaded ${done} of ${toUpload.length} resource${toUpload.length === 1 ? '' : 's'}${
+      `Finalized ${done} of ${toUpload.length} resource${toUpload.length === 1 ? '' : 's'}${
         autoPublish && canPublish ? ' (published)' : ' (submitted for moderation)'
       }.`,
     );
@@ -333,13 +389,34 @@ export default function AdminIngestPage() {
     <div>
       <AdminPageHeader
         title="PDF ingest"
-        description="Point at a local folder of PDFs. AI classifies each file; you review, then upload to the library."
+        description="1) Choose a folder → AI classifies. 2) Edit details and select files. 3) Finalize upload."
         backHref="/admin"
       />
 
+      <ol className="mb-6 grid gap-2 sm:grid-cols-3">
+        {[
+          ['1', 'Classify', 'Pick a PDF folder for AI suggestions'],
+          ['2', 'Review & select', 'Edit metadata; tick files to keep'],
+          ['3', 'Finalize', 'Upload only the selected files'],
+        ].map(([n, title, desc]) => (
+          <li
+            key={n}
+            className="rounded-xl border bg-white px-4 py-3 text-sm shadow-sm"
+          >
+            <div className="font-semibold text-slate-900">
+              <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-efundo-primary text-xs text-white">
+                {n}
+              </span>
+              {title}
+            </div>
+            <p className="mt-1 text-slate-500">{desc}</p>
+          </li>
+        ))}
+      </ol>
+
       <div className="mb-6 space-y-3 rounded-xl border bg-white p-5 shadow-sm">
         <p className="text-sm text-slate-600">
-          Use Chrome or Edge. Choose a folder containing PDFs. Requires{' '}
+          Use Chrome or Edge. Nothing is saved until you finalize. Requires{' '}
           <code className="rounded bg-slate-100 px-1">GEMINI_API_KEY</code> in
           the API env.
         </p>
@@ -369,18 +446,18 @@ export default function AdminIngestPage() {
                 onChange={(e) => setAutoPublish(e.target.checked)}
                 disabled={uploading}
               />
-              Auto-publish after upload
+              Auto-publish after finalize
             </label>
           )}
           <button
             type="button"
             disabled={classifying || uploading || selectedCount === 0}
-            onClick={handleUpload}
+            onClick={handleFinalize}
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
           >
             {uploading
-              ? 'Uploading…'
-              : `Upload selected (${selectedCount})`}
+              ? 'Finalizing…'
+              : `Finalize upload (${selectedCount})`}
           </button>
         </div>
         {progress && <p className="text-sm text-slate-500">{progress}</p>}
@@ -392,6 +469,43 @@ export default function AdminIngestPage() {
         <p className="text-center text-slate-500">No files selected yet.</p>
       ) : (
         <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-slate-50 px-4 py-3">
+            <p className="text-sm text-slate-700">
+              <strong>{readyRows.length}</strong> ready ·{' '}
+              <strong>{selectedCount}</strong> selected for finalize ·{' '}
+              <strong>{rows.filter((r) => r.status === 'done').length}</strong>{' '}
+              done ·{' '}
+              <strong>{rows.filter((r) => r.status === 'error').length}</strong>{' '}
+              errors
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={classifying || uploading || readyRows.length === 0}
+                onClick={() => setSelectedForReady(true)}
+                className="rounded-lg border bg-white px-3 py-1.5 text-sm hover:bg-slate-100 disabled:opacity-50"
+              >
+                Select all ready
+              </button>
+              <button
+                type="button"
+                disabled={classifying || uploading || selectedCount === 0}
+                onClick={() => setSelectedForReady(false)}
+                className="rounded-lg border bg-white px-3 py-1.5 text-sm hover:bg-slate-100 disabled:opacity-50"
+              >
+                Clear selection
+              </button>
+              <button
+                type="button"
+                disabled={classifying || uploading || readyRows.length === 0}
+                onClick={() => setSelectedForReady(!allReadySelected)}
+                className="rounded-lg border bg-white px-3 py-1.5 text-sm hover:bg-slate-100 disabled:opacity-50"
+              >
+                {allReadySelected ? 'Deselect all' : 'Select all'}
+              </button>
+            </div>
+          </div>
+
           {rows.map((row) => (
             <IngestRowCard
               key={row.id}
@@ -423,6 +537,8 @@ function IngestRowCard({
     : programs;
   const selectedProgram = programs.find((p) => p.id === row.programId);
   const subjects = (selectedProgram?.subjects ?? []) as Subject[];
+  const canEdit = !disabled && row.status !== 'done' && row.status !== 'uploading';
+  const canSelect = !disabled && row.status === 'ready';
 
   const statusColor =
     row.status === 'done'
@@ -434,15 +550,27 @@ function IngestRowCard({
           : 'text-slate-500';
 
   return (
-    <div className="rounded-xl border bg-white p-4 shadow-sm">
+    <div
+      className={`rounded-xl border bg-white p-4 shadow-sm ${
+        row.selected && row.status === 'ready'
+          ? 'border-green-500 ring-1 ring-green-200'
+          : ''
+      }`}
+    >
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <input
             type="checkbox"
             checked={row.selected}
-            disabled={disabled || row.status !== 'ready'}
-            onChange={(e) => onChange({ selected: e.target.checked })}
+            disabled={!canSelect}
+            onChange={(e) =>
+              onChange({
+                selected: e.target.checked,
+                expanded: e.target.checked ? true : row.expanded,
+              })
+            }
             className="mt-1"
+            aria-label={`Select ${row.file.name} for finalize`}
           />
           <div>
             <p className="font-medium text-slate-900">{row.file.name}</p>
@@ -453,169 +581,187 @@ function IngestRowCard({
                 : ''}
               {row.rationale ? ` · ${row.rationale}` : ''}
             </p>
+            {row.status === 'ready' && (
+              <p className="mt-1 text-xs text-slate-500">
+                {row.selected
+                  ? 'Included in finalize'
+                  : 'Not selected — edit details, then tick to include'}
+              </p>
+            )}
             {row.error && (
               <p className="mt-1 text-sm text-red-600">{row.error}</p>
             )}
           </div>
         </div>
+        {row.status === 'ready' || row.status === 'error' ? (
+          <button
+            type="button"
+            className="text-sm text-efundo-primary hover:underline"
+            onClick={() => onChange({ expanded: !row.expanded })}
+          >
+            {row.expanded ? 'Hide details' : 'Edit details'}
+          </button>
+        ) : null}
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-600">Type</span>
-          <select
-            value={row.type}
-            disabled={disabled || row.status === 'done'}
-            onChange={(e) => onChange({ type: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
-          >
-            {RESOURCE_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="text-sm md:col-span-2">
-          <span className="mb-1 block text-slate-600">Title</span>
-          <input
-            value={row.title}
-            disabled={disabled || row.status === 'done'}
-            onChange={(e) => onChange({ title: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
-          />
-        </label>
-
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-600">Level</span>
-          <select
-            value={row.educationLevel}
-            disabled={disabled || row.status === 'done'}
-            onChange={(e) =>
-              onChange({
-                educationLevel: e.target.value as EducationLevel | '',
-                programId: '',
-                subjectId: '',
-              })
-            }
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
-          >
-            <option value="">Any / unset</option>
-            {(Object.keys(EDUCATION_LEVEL_LABELS) as EducationLevel[]).map(
-              (level) => (
-                <option key={level} value={level}>
-                  {EDUCATION_LEVEL_LABELS[level]}
+      {row.expanded && row.status !== 'pending' && row.status !== 'classifying' ? (
+        <div className="grid gap-3 border-t border-slate-100 pt-3 md:grid-cols-2 lg:grid-cols-3">
+          <label className="text-sm">
+            <span className="mb-1 block text-slate-600">Type</span>
+            <select
+              value={row.type}
+              disabled={!canEdit}
+              onChange={(e) => onChange({ type: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            >
+              {RESOURCE_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
                 </option>
-              ),
-            )}
-          </select>
-        </label>
+              ))}
+            </select>
+          </label>
 
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-600">Program</span>
-          <select
-            value={row.programId}
-            disabled={disabled || row.status === 'done'}
-            onChange={(e) =>
-              onChange({ programId: e.target.value, subjectId: '' })
-            }
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
-          >
-            <option value="">No program</option>
-            {filteredPrograms.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-                {p.providerName ? ` (${p.providerName})` : ''}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label className="text-sm md:col-span-2">
+            <span className="mb-1 block text-slate-600">Title *</span>
+            <input
+              value={row.title}
+              disabled={!canEdit}
+              onChange={(e) => onChange({ title: e.target.value, error: undefined })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            />
+          </label>
 
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-600">Subject</span>
-          <select
-            value={row.subjectId}
-            disabled={disabled || row.status === 'done' || !row.programId}
-            onChange={(e) => onChange({ subjectId: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
-          >
-            <option value="">No subject</option>
-            {subjects.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.code} — {s.name}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-slate-600">Level</span>
+            <select
+              value={row.educationLevel}
+              disabled={!canEdit}
+              onChange={(e) =>
+                onChange({
+                  educationLevel: e.target.value as EducationLevel | '',
+                  programId: '',
+                  subjectId: '',
+                })
+              }
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            >
+              <option value="">Any / unset</option>
+              {(Object.keys(EDUCATION_LEVEL_LABELS) as EducationLevel[]).map(
+                (level) => (
+                  <option key={level} value={level}>
+                    {EDUCATION_LEVEL_LABELS[level]}
+                  </option>
+                ),
+              )}
+            </select>
+          </label>
 
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-600">Year</span>
-          <input
-            type="number"
-            value={row.year}
-            disabled={disabled || row.status === 'done'}
-            onChange={(e) => onChange({ year: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
-          />
-        </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-slate-600">Program</span>
+            <select
+              value={row.programId}
+              disabled={!canEdit}
+              onChange={(e) =>
+                onChange({ programId: e.target.value, subjectId: '' })
+              }
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            >
+              <option value="">No program</option>
+              {filteredPrograms.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                  {p.providerName ? ` (${p.providerName})` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-600">Semester</span>
-          <select
-            value={row.semester}
-            disabled={disabled || row.status === 'done'}
-            onChange={(e) => onChange({ semester: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
-          >
-            <option value="">—</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-          </select>
-        </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-slate-600">Subject</span>
+            <select
+              value={row.subjectId}
+              disabled={!canEdit || !row.programId}
+              onChange={(e) => onChange({ subjectId: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            >
+              <option value="">No subject</option>
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.code} — {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-600">Author</span>
-          <input
-            value={row.author}
-            disabled={disabled || row.status === 'done'}
-            onChange={(e) => onChange({ author: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
-          />
-        </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-slate-600">Year</span>
+            <input
+              type="number"
+              value={row.year}
+              disabled={!canEdit}
+              onChange={(e) => onChange({ year: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            />
+          </label>
 
-        <label className="text-sm md:col-span-2 lg:col-span-3">
-          <span className="mb-1 block text-slate-600">Description</span>
-          <textarea
-            value={row.description}
-            disabled={disabled || row.status === 'done'}
-            onChange={(e) => onChange({ description: e.target.value })}
-            rows={2}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
-          />
-        </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-slate-600">Semester</span>
+            <select
+              value={row.semester}
+              disabled={!canEdit}
+              onChange={(e) => onChange({ semester: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            >
+              <option value="">—</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+            </select>
+          </label>
 
-        <label className="text-sm md:col-span-2 lg:col-span-3">
-          <span className="mb-1 block text-slate-600">Tags (comma-separated)</span>
-          <input
-            value={row.tags}
-            disabled={disabled || row.status === 'done'}
-            onChange={(e) => onChange({ tags: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
-          />
-        </label>
-      </div>
+          <label className="text-sm">
+            <span className="mb-1 block text-slate-600">Author</span>
+            <input
+              value={row.author}
+              disabled={!canEdit}
+              onChange={(e) => onChange({ author: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            />
+          </label>
 
-      {row.textPreview && (
-        <details className="mt-3">
-          <summary className="cursor-pointer text-sm text-slate-500">
-            Text preview
-          </summary>
-          <pre className="mt-2 max-h-40 overflow-auto rounded-lg bg-slate-50 p-3 text-xs text-slate-600 whitespace-pre-wrap">
-            {row.textPreview}
-          </pre>
-        </details>
-      )}
+          <label className="text-sm md:col-span-2 lg:col-span-3">
+            <span className="mb-1 block text-slate-600">Description</span>
+            <textarea
+              value={row.description}
+              disabled={!canEdit}
+              onChange={(e) => onChange({ description: e.target.value })}
+              rows={2}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            />
+          </label>
+
+          <label className="text-sm md:col-span-2 lg:col-span-3">
+            <span className="mb-1 block text-slate-600">Tags (comma-separated)</span>
+            <input
+              value={row.tags}
+              disabled={!canEdit}
+              onChange={(e) => onChange({ tags: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            />
+          </label>
+
+          {row.textPreview && (
+            <details className="md:col-span-2 lg:col-span-3">
+              <summary className="cursor-pointer text-sm text-slate-500">
+                Text preview
+              </summary>
+              <pre className="mt-2 max-h-40 overflow-auto rounded-lg bg-slate-50 p-3 text-xs text-slate-600 whitespace-pre-wrap">
+                {row.textPreview}
+              </pre>
+            </details>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
